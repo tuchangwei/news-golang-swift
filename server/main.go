@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,10 +14,11 @@ import (
 const VersionNumber = "v1"
 func main() {
 	router := mux.NewRouter()
+
 	homeRouter := router.Methods(http.MethodGet).Subrouter()
 	homeRouter.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		output := fmt.Sprintf("Welcome! The entry endpoint is %s/%s/", request.Host, VersionNumber)
-		writer.Write([]byte(output))
+		_, _ = writer.Write([]byte(output))
 	})
 	server := http.Server{
 		Addr: ":7777",
@@ -25,7 +27,12 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 	}
 	go func() {
-		err := server.ListenAndServe()
+		infos, _ := ioutil.ReadDir("./")
+		for _, info := range infos {
+			fmt.Println("info:", info.Name())
+		}
+		err := server.ListenAndServeTLS("./server/cert/server.crt", "./server/cert/server.key")
+
 		if err != nil {
 			fmt.Println("server error:", err)
 			os.Exit(1)
