@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -27,12 +26,7 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 	}
 	go func() {
-		infos, _ := ioutil.ReadDir("./")
-		for _, info := range infos {
-			fmt.Println("info:", info.Name())
-		}
-		err := server.ListenAndServeTLS("./server/cert/server.crt", "./server/cert/server.key")
-
+		err := server.ListenAndServe()
 		if err != nil {
 			fmt.Println("server error:", err)
 			os.Exit(1)
