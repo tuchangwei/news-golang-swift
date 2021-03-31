@@ -1,11 +1,7 @@
 package main
 
-import (
-	"github.com/gin-gonic/gin"
-	"server/utils"
-)
+import "server/router"
 
 func main() {
-	gin.SetMode(utils.AppMode)
-
+	router.InitRouter()
 }
