@@ -8,5 +8,5 @@ import (
 func InitRouter() {
 	gin.SetMode(utils.AppMode)
 	r := gin.New()
-	r.Run(utils.HttpPort)
+	r.Run(":"+utils.HttpPort)
 }
