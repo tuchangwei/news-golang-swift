@@ -1,7 +1,11 @@
 package main
 
-import "server/router"
+import (
+	"server/db"
+	"server/router"
+)
 
 func main() {
+	db.InitDB()
 	router.InitRouter()
 }

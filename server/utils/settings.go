@@ -35,7 +35,7 @@ func loadDatabaseSettings(file *ini.File)  {
 	DB = file.Section("database").Key("db").MustString("mysql")
 	DBHost = file.Section("database").Key("db_host").MustString("localhost")
 	DBPort = file.Section("database").Key("db_port").MustString("3306")
-	DBUser = file.Section("database").Key("db_user").MustString("tu")
+	DBUser = file.Section("database").Key("db_user").MustString("root")
 	DBPassword = file.Section("database").Key("db_password").MustString("123456")
 	DBName = file.Section("database").Key("db_name").MustString("go_news")
 }
