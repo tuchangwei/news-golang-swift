@@ -1,8 +1,11 @@
 package utils
 
 import (
+	"flag"
 	"fmt"
 	"gopkg.in/ini.v1"
+	"log"
+	"strings"
 )
 
 var (
@@ -18,10 +21,26 @@ var (
 )
 
 func init() {
-	file, err :=  ini.Load("config/config.ini")
+
+	var env string
+	flag.StringVar(&env, "env", "dev", "\"dev\" or \"pro\"")
+	flag.Parse()
+
+	env = strings.ToLower(env)
+	var file *ini.File
+	var err error
+	switch env {
+	case "dev":
+		fmt.Println("You are under Development environment")
+		file, err =  ini.Load("config/config.ini")
+	case "pro":
+		fmt.Println("You are under Production environment")
+		file, err =  ini.Load("../../news-golang-swift-production-config/config.ini")
+	default:
+		log.Fatal("\"env\"'s value is not defined")
+	}
 	if err != nil {
-		fmt.Println("Load settings error:", err)
-		return
+		log.Fatal("Load settings error:", err)
 	}
 	loadServerSettings(file)
 	loadDatabaseSettings(file)
