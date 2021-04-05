@@ -12,13 +12,13 @@ import (
 
 func CreateUser(c *gin.Context) {
 	var user db.User
-	if utils.HandleBindJSON(user, c) != nil {
+	if utils.HandleBindJSON(&user, c) != nil {
 		return
 	}
 	var code int
 	var msg *string
 	code, msg = validator.Validate(user)
-	if code != result.Success {
+	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
 		return
@@ -43,6 +43,12 @@ func DeleteUser(c *gin.Context) {
 	var msg *string
 	user := db.User{}
 	user.ID = uint(id)
+	code = user.CheckExistViaID()
+	if code == result.UserNotExist {
+		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
+		c.Abort()
+		return
+	}
 	code, msg = user.Delete()
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
@@ -56,21 +62,44 @@ func DeleteUser(c *gin.Context) {
 //if user pass into email and password, the two fields will be omitted.
 func EditUser(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	var user db.User
-	if utils.HandleBindJSON(&user, c) != nil {
+	var userFromRequest db.User
+	if utils.HandleBindJSON(&userFromRequest, c) != nil {
 		return
 	}
-
-	user.ID = uint(id)
+	userFromRequest.ID = uint(id)
+	var userFromDB = db.User{}
+	userFromDB.ID = userFromRequest.ID
 	var code int
 	var msg *string
-	code = user.CheckExistViaID()
+	code = userFromDB.CheckExistViaID()
 	if code == result.UserNotExist {
 		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
 		c.Abort()
 		return
 	}
-	code, msg = user.Edit()
+
+	//if userFromRequest.Role is nil, that means the client didn't send us avatar parameter, so we can assign it with the database value
+	//if userFromRequest.Role is not nil, we know the client send us the parameter, we will use the value to update database.
+	if userFromRequest.Role == nil {
+		userFromRequest.Role = userFromDB.Role
+	} else if *(userFromRequest.Role) != 1 && *(userFromRequest.Role) != 2 {
+		c.JSON(http.StatusOK, result.CodeMessage(result.UserRoleValueNotRight, nil))
+		c.Abort()
+		return
+	}
+
+	//if userFromRequest.Avatar is nil, that means the client didn't send us avatar parameter, so we can assign it with the database value
+	//if userFromRequest.Avatar is not nil, we know the client send us the parameter, we will use the value to update database.
+	if userFromRequest.Avatar == nil {
+		userFromRequest.Avatar = userFromDB.Avatar
+	}
+	//if userFromRequest.Username is nil, that means the client didn't send us username parameter, so we can assign it with the database value
+	//if userFromRequest.Username is not nil, we know the client send us the parameter, we will use the value to update database.
+	if userFromRequest.Username == nil {
+		userFromRequest.Username = userFromDB.Username
+	}
+
+	code, msg = userFromRequest.Edit()
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -81,16 +110,24 @@ func EditUser(c *gin.Context) {
 
 func ChangeUserPassword(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	var user db.User
-	if utils.HandleBindJSON(&user, c) != nil {
+	var tmp db.User
+	if utils.HandleBindJSON(&tmp, c) != nil {
 		return
 	}
+	password := tmp.Password
+	user := db.User{}
 	user.ID = uint(id)
 	var code int
 	var msg *string
 	code = user.CheckExistViaID()
 	if code == result.UserNotExist {
 		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
+		c.Abort()
+		return
+	}
+	user.Password = password
+	if code, msg := validator.Validate(&user); code == result.Error {
+		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
 		return
 	}
@@ -116,6 +153,10 @@ func GetUser(c *gin.Context)  {
 		return
 	}
 	var codeMsg = result.CodeMessage(code, msg)
-	codeMsg["data"] = user
+	codeMsg["data"] = gin.H{
+		"username" : user.Username,
+		"role" : user.Role,
+		"avatar" : user.Avatar,
+	}
 	c.JSON(http.StatusOK, codeMsg)
 }

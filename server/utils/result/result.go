@@ -12,12 +12,14 @@ const (
 	//code = 1000... user error
 	UserExist = 1001
 	UserNotExist = 1002
+	UserRoleValueNotRight = 1003
 )
 var resultCodeMsg = map[int]string{
 	Success: "OK",
 	Error:   "Failed",
 	UserExist: "User has existed",
 	UserNotExist: "User doesn't exist",
+	UserRoleValueNotRight: "User's role only can be assigned to 1 or 2",
 }
 
 func CodeMessage(resultCode int, message *string) gin.H {
