@@ -31,6 +31,7 @@ func InitRouter() {
 	baseURL := fmt.Sprintf("api/%s", Version)
 	r := engine.Group(baseURL)
 	{
+		r.GET("users", v1.GetUsers)
 		r.POST("users", v1.CreateUser)
 		r.DELETE("users/:id", v1.DeleteUser)
 		r.PUT("users/:id", v1.EditUser)

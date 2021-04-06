@@ -144,19 +144,33 @@ func GetUser(c *gin.Context)  {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var user db.User
 	user.ID = uint(id)
-	var code int
-	var msg *string
-	code, msg = user.Get()
+	code, msg, apiUser := user.Get()
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
 		return
 	}
 	var codeMsg = result.CodeMessage(code, msg)
-	codeMsg["data"] = gin.H{
-		"username" : user.Username,
-		"role" : user.Role,
-		"avatar" : user.Avatar,
+	codeMsg["data"] = apiUser
+	c.JSON(http.StatusOK, codeMsg)
+}
+
+func GetUsers(c *gin.Context)  {
+	username := c.Query("username")
+	pageNum, _ := strconv.Atoi(c.Query("pageNum"))
+	pageSize, _ := strconv.Atoi(c.Query("pageSize"))
+	if pageSize == 0 {
+		pageSize = 20
 	}
+
+	code, msg, users, total := db.GetAllUsers(username, pageSize, pageNum)
+	if code == result.Error {
+		c.JSON(code, result.CodeMessage(code, msg))
+		c.Abort()
+		return
+	}
+	var codeMsg = result.CodeMessage(code, nil)
+	codeMsg["data"] = users
+	codeMsg["total"] = total
 	c.JSON(http.StatusOK, codeMsg)
 }

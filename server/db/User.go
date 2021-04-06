@@ -14,7 +14,13 @@ type User struct {
 	Username *string `json:"username"`
 	Password *string `gorm:"not null" validate:"required,min=6,max=120" json:"password"`
 	Avatar *string `json:"avatar"`
+	Role *int `gorm:"not null;default:1" json:"role"`//1 normal, 2 admin
+}
+type APIUser struct {
+	Username *string `json:"username"`
+	Avatar *string `json:"avatar"`
 	Role *int `gorm:"not null;default:1"`//1 normal, 2 admin
+	ID   *uint `json:"id"`
 }
 
 
@@ -70,13 +76,34 @@ func (u *User) ChangePassword() (code int, message *string) {
 }
 
 
-func (u *User) Get() (code int, message *string) {
-	err := DB.Select("username", "avatar", "role").Where("id = ?", u.ID).First(u).Error
+func (u *User) Get() (code int, message *string, user APIUser) {
+	var apiUser APIUser
+	err := DB.Model(u).Where("id = ?", u.ID).First(&apiUser).Error
 	if err != nil {
 		msg := err.Error()
-		return result.Error, &msg
+		return result.Error, &msg, apiUser
 	}
-	return result.Success, nil
+	return result.Success, nil, apiUser
+}
+func GetAllUsers(username string, pageSize int, pageNumber int) (int, *string, []APIUser, int64) {
+	var users []APIUser
+	var err error
+	if username == "" {//select all users
+		if err = DB.Model(&[]User{}).Limit(pageSize).Offset(pageNumber-1).Find(&users).Error;
+		err != nil {
+			msg := err.Error()
+			return result.Error, &msg, users, 0
+		}
+	} else { // select all users with the same username
+		if err = DB.Model(&[]User{}).Where("username like ?", username).Limit(pageSize).Offset(pageNumber).Find(&users).Error;
+			err != nil {
+			msg := err.Error()
+			return result.Error, &msg, users, 0
+		}
+	}
+	var total int64
+	DB.Model(&[]User{}).Count(&total)
+	return result.Success, nil, users, total
 }
 
 
