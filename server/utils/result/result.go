@@ -13,6 +13,7 @@ const (
 	UserExist = 1001
 	UserNotExist = 1002
 	UserRoleValueNotRight = 1003
+	UserPasswordNotRight = 1004
 )
 var resultCodeMsg = map[int]string{
 	Success: "OK",
@@ -20,6 +21,7 @@ var resultCodeMsg = map[int]string{
 	UserExist: "User has existed",
 	UserNotExist: "User doesn't exist",
 	UserRoleValueNotRight: "User's role only can be assigned to 1 or 2",
+	UserPasswordNotRight: "Password is incorrect",
 }
 
 func CodeMessage(resultCode int, message *string) gin.H {

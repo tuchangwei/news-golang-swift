@@ -165,7 +165,7 @@ func GetUsers(c *gin.Context)  {
 
 	code, msg, users, total := db.GetAllUsers(username, pageSize, pageNum)
 	if code == result.Error {
-		c.JSON(code, result.CodeMessage(code, msg))
+		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
 		return
 	}
@@ -173,4 +173,21 @@ func GetUsers(c *gin.Context)  {
 	codeMsg["data"] = users
 	codeMsg["total"] = total
 	c.JSON(http.StatusOK, codeMsg)
+}
+func Login(c *gin.Context) {
+	var user db.User
+	if err := utils.HandleBindJSON(&user, c); err != nil {
+		return
+	}
+	if code, msg := validator.Validate(user); code == result.Error {
+		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
+		c.Abort()
+		return
+	}
+	if code, msg := user.Login(); code != result.Success {
+		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
+		c.Abort()
+		return
+	}
+	c.JSON(http.StatusOK, result.CodeMessage(result.Success, nil))
 }

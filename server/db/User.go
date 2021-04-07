@@ -19,7 +19,7 @@ type User struct {
 type APIUser struct {
 	Username *string `json:"username"`
 	Avatar *string `json:"avatar"`
-	Role *int `gorm:"not null;default:1"`//1 normal, 2 admin
+	Role *int `gorm:"not null;default:1" json:"role"`//1 normal, 2 admin
 	ID   *uint `json:"id"`
 }
 
@@ -104,6 +104,15 @@ func GetAllUsers(username string, pageSize int, pageNumber int) (int, *string, [
 	var total int64
 	DB.Model(&[]User{}).Count(&total)
 	return result.Success, nil, users, total
+}
+func (u *User) Login() (code int, message *string) {
+	if err := DB.Select("email").Where("email = ?", u.Email).First(u).Error; err != nil {
+		return result.UserNotExist, nil
+	}
+	if err := DB.Where("email =? and password = ?", u.Email, u.Password).First(u).Error; err != nil {
+		return result.UserPasswordNotRight, nil
+	}
+	return result.Success, nil
 }
 
 

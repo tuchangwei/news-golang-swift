@@ -37,6 +37,7 @@ func InitRouter() {
 		r.PUT("users/:id", v1.EditUser)
 		r.GET("users/:id", v1.GetUser)
 		r.PUT("changPassword/:id", v1.ChangeUserPassword)
+		r.POST("login", v1.Login)
 	}
 
 
