@@ -1,4 +1,4 @@
-package utils
+package settings
 
 import (
 	"flag"
@@ -18,10 +18,10 @@ var (
 	DBUser string
 	DBPassword string
 	DBName string
+	JWTKey string
 )
 
 func init() {
-
 	var env string
 	flag.StringVar(&env, "env", "dev", "\"dev\" or \"pro\"")
 	flag.Parse()
@@ -49,6 +49,7 @@ func loadServerSettings(file *ini.File)  {
 	Protocol = file.Section("server").Key("protocol").MustString("http")
 	AppMode = file.Section("server").Key("app_mode").MustString("debug")
 	HttpPort = file.Section("server").Key("http_port").MustString("7777")
+	JWTKey = file.Section("server").Key("jwt_key").MustString("go-news~~~~xxxx~~~~")
 }
 func loadDatabaseSettings(file *ini.File)  {
 	DB = file.Section("database").Key("db").MustString("mysql")

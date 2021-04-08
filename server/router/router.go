@@ -6,7 +6,8 @@ import (
 	"log"
 	"net/http"
 	v1 "server/api/v1"
-	"server/utils"
+	"server/middleware"
+	"server/utils/settings"
 )
 
 const (
@@ -14,7 +15,7 @@ const (
 )
 
 func InitRouter() {
-	gin.SetMode(utils.AppMode)
+	gin.SetMode(settings.AppMode)
 	engine := gin.Default()
 	engine.Handle(http.MethodGet, "/", func(c *gin.Context) {
 		host := c.Request.Host
@@ -29,19 +30,23 @@ func InitRouter() {
 	})
 
 	baseURL := fmt.Sprintf("api/%s", Version)
-	r := engine.Group(baseURL)
+	authorizedRouter := engine.Group(baseURL)
+	authorizedRouter.Use(middleware.VerifyToken())
 	{
-		r.GET("users", v1.GetUsers)
-		r.POST("users", v1.CreateUser)
-		r.DELETE("users/:id", v1.DeleteUser)
-		r.PUT("users/:id", v1.EditUser)
-		r.GET("users/:id", v1.GetUser)
-		r.PUT("changPassword/:id", v1.ChangeUserPassword)
-		r.POST("login", v1.Login)
+		authorizedRouter.GET("users", v1.GetUsers)
+		authorizedRouter.POST("users", v1.CreateUser)
+		authorizedRouter.DELETE("users/:id", v1.DeleteUser)
+		authorizedRouter.PUT("users/:id", v1.EditUser)
+		authorizedRouter.GET("users/:id", v1.GetUser)
+		authorizedRouter.PUT("changPassword/:id", v1.ChangeUserPassword)
 	}
 
+	normalRouter := engine.Group(baseURL)
+	{
+		normalRouter.POST("login", v1.Login)
+	}
 
-	err := engine.Run(":"+utils.HttpPort)
+	err := engine.Run(":"+ settings.HttpPort)
 	if err != nil {
 		log.Fatal("can't start server", err)
 	}

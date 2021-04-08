@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"server/db"
+	"server/middleware"
 	"server/utils"
 	"server/utils/result"
 	"server/utils/validator"
@@ -189,5 +190,13 @@ func Login(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	c.JSON(http.StatusOK, result.CodeMessage(result.Success, nil))
+	token, err := middleware.GenerateToken(*(user.Email))
+	if err != nil {
+		c.JSON(http.StatusOK, result.CodeMessage(result.CantGenerateToken, nil))
+		c.Abort()
+		return
+	}
+	responseData := result.CodeMessage(result.Success, nil)
+	responseData["token"] = token
+	c.JSON(http.StatusOK, responseData)
 }
