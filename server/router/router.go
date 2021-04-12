@@ -34,7 +34,6 @@ func InitRouter() {
 	authorizedRouter.Use(middleware.VerifyToken())
 	{
 		authorizedRouter.GET("users", v1.GetUsers)
-		authorizedRouter.POST("users", v1.CreateUser)
 		authorizedRouter.DELETE("users/:id", v1.DeleteUser)
 		authorizedRouter.PUT("users/:id", v1.EditUser)
 		authorizedRouter.GET("users/:id", v1.GetUser)
@@ -44,6 +43,7 @@ func InitRouter() {
 	normalRouter := engine.Group(baseURL)
 	{
 		normalRouter.POST("login", v1.Login)
+		authorizedRouter.POST("users", v1.CreateUser)
 	}
 
 	err := engine.Run(":"+ settings.HttpPort)

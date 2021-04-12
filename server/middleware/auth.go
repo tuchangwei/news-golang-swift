@@ -10,15 +10,15 @@ import (
 	"time"
 )
 //Doc: https://pkg.go.dev/github.com/dgrijalva/jwt-go@v3.2.0+incompatible
-var JWT_Key = []byte(settings.JWTKey)
+var JwtKey = []byte(settings.JWTKey)
 type MyClaims struct {
-	email string `json:"email"`
+	Email string `json:"email"`
 	jwt.StandardClaims
 }
 //generate token
 func GenerateToken(email string) (string, error)  {
 	claims := MyClaims{
-		email:          email ,
+		Email: email ,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Minute*15).Unix(),
 			Issuer: "go-news",
@@ -26,30 +26,30 @@ func GenerateToken(email string) (string, error)  {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(JWT_Key)
+	return token.SignedString(JwtKey)
 }
 //verify token
-func verifyToken(tokenStr string) (code int, message *string)  {
+func verifyToken(tokenStr string) (code int, message *string, email *string)  {
 
 	token, err := jwt.ParseWithClaims(tokenStr, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return JWT_Key, nil
+		return JwtKey, nil
 	})
 	if ve, ok := err.(*jwt.ValidationError); ok {
 		if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-			return result.TokenMalformed, nil
+			return result.TokenMalformed, nil, nil
 		} else if ve.Errors&jwt.ValidationErrorExpired != 0 {
-			return result.TokenExpired, nil
+			return result.TokenExpired, nil, nil
 		} else {
 			msg := ve.Error()
-			return result.TokenInvalided, &msg
+			return result.TokenInvalided, &msg, nil
 		}
 	}
 	if token != nil {
-		if _, ok := token.Claims.(*MyClaims); ok && token.Valid {
-			return result.Success, nil
+		if claims, ok := token.Claims.(*MyClaims); ok && token.Valid {
+			return result.Success, nil, &claims.Email
 		}
 	}
-	return result.TokenInvalided, nil
+	return result.TokenInvalided, nil, nil
 }
 func VerifyToken() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -66,11 +66,13 @@ func VerifyToken() gin.HandlerFunc {
 			return
 		}
 		tokenStr := strs[1]
-		if code, msg := verifyToken(tokenStr); code != result.Success {
+		code, msg, email := verifyToken(tokenStr)
+		if code != result.Success {
 			c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 			c.Abort()
 			return
 		}
+		c.Set("email", email)
 		c.Next()
 	}
 }

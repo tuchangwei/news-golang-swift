@@ -36,7 +36,15 @@ func CreateUser(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	c.JSON(http.StatusOK, result.CodeMessage(code, msg))
+	token, err := middleware.GenerateToken(*(user.Email))
+	if err != nil {
+		c.JSON(http.StatusOK, result.CodeMessage(result.CantGenerateToken, nil))
+		c.Abort()
+		return
+	}
+	responseData := result.CodeMessage(result.Success, nil)
+	responseData["token"] = token
+	c.JSON(http.StatusOK, responseData)
 }
 func DeleteUser(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
@@ -155,7 +163,6 @@ func GetUser(c *gin.Context)  {
 	codeMsg["data"] = apiUser
 	c.JSON(http.StatusOK, codeMsg)
 }
-
 func GetUsers(c *gin.Context)  {
 	username := c.Query("username")
 	pageNum, _ := strconv.Atoi(c.Query("pageNum"))
