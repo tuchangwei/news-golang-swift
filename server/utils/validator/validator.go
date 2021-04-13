@@ -15,9 +15,16 @@ func Validate(data interface{}) (code int, message *string) {
 	err := enTrans.RegisterDefaultTranslations(validate, trans)
 	err = validate.Struct(data)
 	if err != nil {
-		for _, fieldError := range err.(validator.ValidationErrors) {
-			message := fieldError.Translate(trans)
+		switch err.(type) {
+		case validator.ValidationErrors:
+			for _, fieldError := range err.(validator.ValidationErrors) {
+				message := fieldError.Translate(trans)
+				return result.Error, &message
+			}
+		case *validator.InvalidValidationError:
+			message := err.Error()
 			return result.Error, &message
+
 		}
 	}
 	return result.Success,nil

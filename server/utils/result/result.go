@@ -15,7 +15,8 @@ const (
 	UserRoleValueNotRight = 1003
 	UserPasswordNotRight = 1004
 	CantGenerateToken = 1005
-	UserHasNoPermission = 1007
+	UserHasNoPermission = 1006
+	NoEmailInContext = 1007
 
 	//code = 2000...token error
 	TokenMalformed = 2000 // Token is malformed
@@ -38,6 +39,7 @@ var resultCodeMsg = map[int]string{
 	NoToken: "No token",
 	TokenFormatNotRight: "Token format is incorrect",
 	UserHasNoPermission: "User has no permission",
+	NoEmailInContext: "No email in Context",
 }
 
 func CodeMessage(resultCode int, message *string) gin.H {

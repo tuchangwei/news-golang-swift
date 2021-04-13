@@ -5,14 +5,20 @@ import (
 	"net/http"
 	"server/db"
 	"server/middleware"
+	"server/model"
 	"server/utils"
 	"server/utils/result"
 	"server/utils/validator"
 	"strconv"
 )
 
-func CreateUser(c *gin.Context) {
-	var user db.User
+type UserHandler struct { }
+var userRepo = db.NewUserRepo()
+func NewUserHandler() *UserHandler {
+	return &UserHandler{}
+}
+func (uh *UserHandler)CreateUser(c *gin.Context) {
+	var user model.User
 	if utils.HandleBindJSON(&user, c) != nil {
 		return
 	}
@@ -24,13 +30,13 @@ func CreateUser(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	code = user.CheckExistViaEmail()
+	code, _ = userRepo.CheckExistViaEmail(*user.Email)
 	if code == result.UserExist {
 		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
 		c.Abort()
 		return
 	}
-	code, msg = user.Insert()
+	code, msg = userRepo.Insert(user)
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -46,19 +52,17 @@ func CreateUser(c *gin.Context) {
 	responseData["token"] = token
 	c.JSON(http.StatusOK, responseData)
 }
-func DeleteUser(c *gin.Context) {
+func (uh *UserHandler)DeleteUser(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var code int
 	var msg *string
-	user := db.User{}
-	user.ID = uint(id)
-	code = user.CheckExistViaID()
+	code, _ = userRepo.CheckExistViaID(id)
 	if code == result.UserNotExist {
 		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
 		c.Abort()
 		return
 	}
-	code, msg = user.Delete()
+	code, msg = userRepo.DeleteVia(id)
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -69,46 +73,44 @@ func DeleteUser(c *gin.Context) {
 
 //allow user to edit all fields except email and password.
 //if user pass into email and password, the two fields will be omitted.
-func EditUser(c *gin.Context) {
+func (uh *UserHandler)EditUser(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	var userFromRequest db.User
-	if utils.HandleBindJSON(&userFromRequest, c) != nil {
+	var user model.User
+	if utils.HandleBindJSON(&user, c) != nil {
 		return
 	}
-	userFromRequest.ID = uint(id)
-	var userFromDB = db.User{}
-	userFromDB.ID = userFromRequest.ID
+	user.ID = uint(id)
 	var code int
 	var msg *string
-	code = userFromDB.CheckExistViaID()
+	code, dbUser := userRepo.CheckExistViaID(id)
 	if code == result.UserNotExist {
 		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
 		c.Abort()
 		return
 	}
 
-	//if userFromRequest.Role is nil, that means the client didn't send us avatar parameter, so we can assign it with the database value
-	//if userFromRequest.Role is not nil, we know the client send us the parameter, we will use the value to update database.
-	if userFromRequest.Role == nil {
-		userFromRequest.Role = userFromDB.Role
-	} else if *(userFromRequest.Role) != 1 && *(userFromRequest.Role) != 2 {
+	//if user.Role is nil, that means the client didn't send us Role parameter, so we can assign it with the database value
+	//if user.Role is not nil, we know the client send us the parameter, we will use the value to update database.
+	if user.Role == nil {
+		user.Role = dbUser.Role
+	} else if *(user.Role) != 1 && *(user.Role) != 2 {
 		c.JSON(http.StatusOK, result.CodeMessage(result.UserRoleValueNotRight, nil))
 		c.Abort()
 		return
 	}
 
-	//if userFromRequest.Avatar is nil, that means the client didn't send us avatar parameter, so we can assign it with the database value
-	//if userFromRequest.Avatar is not nil, we know the client send us the parameter, we will use the value to update database.
-	if userFromRequest.Avatar == nil {
-		userFromRequest.Avatar = userFromDB.Avatar
+	//if user.Avatar is nil, that means the client didn't send us avatar parameter, so we can assign it with the database value
+	//if user.Avatar is not nil, we know the client send us the parameter, we will use the value to update database.
+	if user.Avatar == nil {
+		user.Avatar = dbUser.Avatar
 	}
-	//if userFromRequest.Username is nil, that means the client didn't send us username parameter, so we can assign it with the database value
-	//if userFromRequest.Username is not nil, we know the client send us the parameter, we will use the value to update database.
-	if userFromRequest.Username == nil {
-		userFromRequest.Username = userFromDB.Username
+	//if user.Username is nil, that means the client didn't send us username parameter, so we can assign it with the database value
+	//if user.Username is not nil, we know the client send us the parameter, we will use the value to update database.
+	if user.Username == nil {
+		user.Username = dbUser.Username
 	}
 
-	code, msg = userFromRequest.Edit()
+	code, msg = userRepo.Edit(user)
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -117,30 +119,35 @@ func EditUser(c *gin.Context) {
 	c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 }
 
-func ChangeUserPassword(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	var tmp db.User
-	if utils.HandleBindJSON(&tmp, c) != nil {
+func (uh *UserHandler)ChangeUserPassword(c *gin.Context) {
+	type Password struct {
+		Password string `json:"password"`
+	}
+	var password Password
+	if utils.HandleBindJSON(&password, c) != nil {
 		return
 	}
-	password := tmp.Password
-	user := db.User{}
-	user.ID = uint(id)
+	email, exist := c.Get("email")
+	if !exist {
+		c.JSON(http.StatusOK, result.CodeMessage(result.NoEmailInContext, nil))
+		c.Abort()
+		return
+	}
 	var code int
 	var msg *string
-	code = user.CheckExistViaID()
+	code, dbUser := userRepo.CheckExistViaEmail(*email.(*string))
 	if code == result.UserNotExist {
 		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
 		c.Abort()
 		return
 	}
-	user.Password = password
-	if code, msg := validator.Validate(&user); code == result.Error {
+	dbUser.Password = &password.Password
+	if code, msg := validator.Validate(dbUser); code == result.Error {//validate password length
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
 		return
 	}
-	code, msg = user.ChangePassword()
+	code, msg = userRepo.ChangePassword(*dbUser)
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -149,11 +156,11 @@ func ChangeUserPassword(c *gin.Context) {
 	c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 }
 
-func GetUser(c *gin.Context)  {
+func (uh *UserHandler)GetUser(c *gin.Context)  {
 	id, _ := strconv.Atoi(c.Param("id"))
-	var user db.User
+	var user model.User
 	user.ID = uint(id)
-	code, msg, apiUser := user.Get()
+	code, msg, apiUser := userRepo.GetVia(id)
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -163,7 +170,7 @@ func GetUser(c *gin.Context)  {
 	codeMsg["data"] = apiUser
 	c.JSON(http.StatusOK, codeMsg)
 }
-func GetUsers(c *gin.Context)  {
+func (uh *UserHandler)GetUsers(c *gin.Context)  {
 	username := c.Query("username")
 	pageNum, _ := strconv.Atoi(c.Query("pageNum"))
 	pageSize, _ := strconv.Atoi(c.Query("pageSize"))
@@ -171,7 +178,7 @@ func GetUsers(c *gin.Context)  {
 		pageSize = 20
 	}
 
-	code, msg, users, total := db.GetAllUsers(username, pageSize, pageNum)
+	code, msg, users, total := userRepo.GetAllUsers(username, pageSize, pageNum)
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -182,8 +189,8 @@ func GetUsers(c *gin.Context)  {
 	codeMsg["total"] = total
 	c.JSON(http.StatusOK, codeMsg)
 }
-func Login(c *gin.Context) {
-	var user db.User
+func (uh *UserHandler)Login(c *gin.Context) {
+	var user model.User
 	if err := utils.HandleBindJSON(&user, c); err != nil {
 		return
 	}
@@ -192,7 +199,7 @@ func Login(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	if code, msg := user.Login(); code != result.Success {
+	if code, msg := userRepo.Login(&user); code != result.Success {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
 		return
