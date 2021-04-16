@@ -21,7 +21,7 @@ var (
 	JWTKey string
 )
 
-func init() {
+func InitSettings() {
 	var env string
 	flag.StringVar(&env, "env", "dev", "\"dev\" or \"pro\"")
 	flag.Parse()

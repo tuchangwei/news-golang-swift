@@ -1,7 +1,9 @@
 package db
 
 import (
+	"golang.org/x/crypto/bcrypt"
 	"server/model"
+	"server/utils"
 	"server/utils/result"
 )
 
@@ -28,7 +30,10 @@ func (ur *UserRepo) CheckExistViaID(id int) (code int, user *model.User) {
 	return result.UserExist, &u
 }
 
+
 func (ur *UserRepo) Insert(user model.User) (code int, message *string) {
+	encryptedPassword := utils.Encrypt(*user.Password)
+	user.Password = &(encryptedPassword)
 	err := DB.Create(&user).Error
 	if err != nil {
 		msg := err.Error()
@@ -56,8 +61,10 @@ func (ur *UserRepo) Edit(user model.User) (code int, message *string) {
 	return result.Success, nil
 }
 
-func (ur *UserRepo) ChangePassword(user model.User) (code int, message *string) {
-	err := DB.Model(&user).Where("id = ?", user.ID).Select("password").Updates(&user).Error
+func (ur *UserRepo) ChangePassword(user *model.User) (code int, message *string) {
+	encryptedPassword := utils.Encrypt(*user.Password)
+	user.Password = &encryptedPassword
+	err := DB.Model(user).Where("id = ?", user.ID).Select("password").Updates(user).Error
 	if err != nil {
 		msg := err.Error()
 		return result.Error, &msg
@@ -95,12 +102,17 @@ func (ur *UserRepo)GetAllUsers(username string, pageSize int, pageNumber int) (i
 	}
 	return result.Success, nil, users, total
 }
-func (ur *UserRepo) Login(user *model.User) (code int, message *string) {
-	if err := DB.Select("email").Where("email = ?", user.Email).First(user).Error; err != nil {
+func (ur *UserRepo) Login(email string, password string) (code int, message *string) {
+	var user model.User
+	if err := DB.Select("password").Where("email = ?", email).First(&user).Error; err != nil {
 		return result.UserNotExist, nil
 	}
-	if err := DB.Where("email =? and password = ?", user.Email, user.Password).First(user).Error; err != nil {
+	dbPwd := user.Password
+	if err := bcrypt.CompareHashAndPassword([]byte(*dbPwd), []byte(password)); err != nil {
 		return result.UserPasswordNotRight, nil
 	}
 	return result.Success, nil
+}
+func (ur *UserRepo) DeleteAll() {
+	DB.Exec("DELETE FROM users")
 }

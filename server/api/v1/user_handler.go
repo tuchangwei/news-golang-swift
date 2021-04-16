@@ -147,7 +147,7 @@ func (uh *UserHandler)ChangeUserPassword(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	code, msg = userRepo.ChangePassword(*dbUser)
+	code, msg = userRepo.ChangePassword(dbUser)
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -199,7 +199,7 @@ func (uh *UserHandler)Login(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	if code, msg := userRepo.Login(&user); code != result.Success {
+	if code, msg := userRepo.Login(*user.Email, *user.Password); code != result.Success {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
 		return

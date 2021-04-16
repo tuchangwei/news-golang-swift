@@ -44,7 +44,7 @@ func InitRouter() {
 	normalRouter := engine.Group(baseURL)
 	{
 		normalRouter.POST("login", userHandler.Login)
-		normalRouter.POST("users", userHandler.CreateUser)
+		normalRouter.POST("register", userHandler.CreateUser)
 	}
 
 	err := engine.Run(":"+ settings.HttpPort)
