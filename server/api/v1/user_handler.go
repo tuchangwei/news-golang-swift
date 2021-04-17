@@ -52,7 +52,21 @@ func (uh *UserHandler)CreateUser(c *gin.Context) {
 	responseData["token"] = token
 	c.JSON(http.StatusOK, responseData)
 }
+func checkUserPermission(c *gin.Context) bool {
+	id, _ := strconv.Atoi(c.Param("id"))
+	value, _ := c.Get("kCurrentUser")
+	currentUser := value.(model.User)
+	if currentUser.ID != uint(id) && currentUser.Role != 2 {
+		c.JSON(http.StatusOK, result.CodeMessage(result.UserHasNoPermission, nil))
+		c.Abort()
+		return false
+	}
+	return true
+}
 func (uh *UserHandler)DeleteUser(c *gin.Context) {
+	if !checkUserPermission(c) {
+		return
+	}
 	id, _ := strconv.Atoi(c.Param("id"))
 	var code int
 	var msg *string
@@ -73,6 +87,9 @@ func (uh *UserHandler)DeleteUser(c *gin.Context) {
 
 //EditUser edit user's role, avatar, username
 func (uh *UserHandler)EditUser(c *gin.Context) {
+	if !checkUserPermission(c) {
+		return
+	}
 	id, _ := strconv.Atoi(c.Param("id"))
 	type UserParam struct {
 		Username *string `json:"username"`
@@ -133,27 +150,17 @@ func (uh *UserHandler)ChangeUserPassword(c *gin.Context) {
 	if utils.HandleBindJSON(&password, c) != nil {
 		return
 	}
-	email, exist := c.Get("email")
-	if !exist {
-		c.JSON(http.StatusOK, result.CodeMessage(result.NoEmailInContext, nil))
-		c.Abort()
-		return
-	}
+	value, _ := c.Get("kCurrentUser")
+	currentUser := value.(model.User)
 	var code int
 	var msg *string
-	code, dbUser := userRepo.CheckExistViaEmail(*email.(*string))
-	if code == result.UserNotExist {
-		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
-		c.Abort()
-		return
-	}
-	dbUser.Password = password.Password
-	if code, msg := validator.Validate(dbUser); code == result.Error {//validate password length
+	currentUser.Password = password.Password
+	if code, msg := validator.Validate(currentUser); code == result.Error {//validate password length
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
 		return
 	}
-	code, msg = userRepo.ChangePassword(dbUser)
+	code, msg = userRepo.ChangePassword(currentUser)
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()

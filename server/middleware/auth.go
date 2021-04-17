@@ -4,6 +4,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"server/db"
 	"server/utils/result"
 	"server/utils/settings"
 	"strings"
@@ -72,7 +73,9 @@ func VerifyToken() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		c.Set("email", email)
+		userRepo := db.UserRepo{}
+		_, user := userRepo.CheckExistViaEmail(*email)
+		c.Set("kCurrentUser", *user)
 		c.Next()
 	}
 }

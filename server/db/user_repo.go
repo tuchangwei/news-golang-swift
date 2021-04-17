@@ -60,10 +60,9 @@ func (ur *UserRepo) Edit(user model.User) (code int, message *string) {
 	return result.Success, nil
 }
 
-func (ur *UserRepo) ChangePassword(user *model.User) (code int, message *string) {
+func (ur *UserRepo) ChangePassword(user model.User) (code int, message *string) {
 	user.Password = utils.Encrypt(user.Password)
-
-	err := DB.Model(user).Where("id = ?", user.ID).Select("password").Updates(user).Error
+	err := DB.Model(&user).Where("id = ?", user.ID).Select("password").Updates(&user).Error
 	if err != nil {
 		msg := err.Error()
 		return result.Error, &msg
