@@ -32,8 +32,7 @@ func (ur *UserRepo) CheckExistViaID(id int) (code int, user *model.User) {
 
 
 func (ur *UserRepo) Insert(user model.User) (code int, message *string) {
-	encryptedPassword := utils.Encrypt(*user.Password)
-	user.Password = &(encryptedPassword)
+	user.Password = utils.Encrypt(user.Password)
 	err := DB.Create(&user).Error
 	if err != nil {
 		msg := err.Error()
@@ -62,8 +61,8 @@ func (ur *UserRepo) Edit(user model.User) (code int, message *string) {
 }
 
 func (ur *UserRepo) ChangePassword(user *model.User) (code int, message *string) {
-	encryptedPassword := utils.Encrypt(*user.Password)
-	user.Password = &encryptedPassword
+	user.Password = utils.Encrypt(user.Password)
+
 	err := DB.Model(user).Where("id = ?", user.ID).Select("password").Updates(user).Error
 	if err != nil {
 		msg := err.Error()
@@ -107,8 +106,7 @@ func (ur *UserRepo) Login(email string, password string) (code int, message *str
 	if err := DB.Select("password").Where("email = ?", email).First(&user).Error; err != nil {
 		return result.UserNotExist, nil
 	}
-	dbPwd := user.Password
-	if err := bcrypt.CompareHashAndPassword([]byte(*dbPwd), []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return result.UserPasswordNotRight, nil
 	}
 	return result.Success, nil

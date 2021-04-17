@@ -30,7 +30,7 @@ func (uh *UserHandler)CreateUser(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	code, _ = userRepo.CheckExistViaEmail(*user.Email)
+	code, _ = userRepo.CheckExistViaEmail(user.Email)
 	if code == result.UserExist {
 		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
 		c.Abort()
@@ -42,7 +42,7 @@ func (uh *UserHandler)CreateUser(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	token, err := middleware.GenerateToken(*(user.Email))
+	token, err := middleware.GenerateToken(user.Email)
 	if err != nil {
 		c.JSON(http.StatusOK, result.CodeMessage(result.CantGenerateToken, nil))
 		c.Abort()
@@ -71,11 +71,16 @@ func (uh *UserHandler)DeleteUser(c *gin.Context) {
 	c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 }
 
-//allow user to edit all fields except email and password.
-//if user pass into email and password, the two fields will be omitted.
+//EditUser edit user's role, avatar, username
 func (uh *UserHandler)EditUser(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	var user model.User
+	type UserParam struct {
+		Username *string `json:"username"`
+		Avatar *string `json:"avatar"`
+		Role *int `json:"role"`//1 normal, 2 admin
+		ID   uint `json:"id"`
+	}
+	var user UserParam
 	if utils.HandleBindJSON(&user, c) != nil {
 		return
 	}
@@ -91,26 +96,27 @@ func (uh *UserHandler)EditUser(c *gin.Context) {
 
 	//if user.Role is nil, that means the client didn't send us Role parameter, so we can assign it with the database value
 	//if user.Role is not nil, we know the client send us the parameter, we will use the value to update database.
-	if user.Role == nil {
-		user.Role = dbUser.Role
-	} else if *(user.Role) != 1 && *(user.Role) != 2 {
-		c.JSON(http.StatusOK, result.CodeMessage(result.UserRoleValueNotRight, nil))
-		c.Abort()
-		return
+	if user.Role != nil {
+		if *(user.Role) != 1 && *(user.Role) != 2 {
+			c.JSON(http.StatusOK, result.CodeMessage(result.UserRoleValueNotRight, nil))
+			c.Abort()
+			return
+		}
+		dbUser.Role = *user.Role
 	}
 
 	//if user.Avatar is nil, that means the client didn't send us avatar parameter, so we can assign it with the database value
 	//if user.Avatar is not nil, we know the client send us the parameter, we will use the value to update database.
-	if user.Avatar == nil {
-		user.Avatar = dbUser.Avatar
+	if user.Avatar != nil {
+		dbUser.Avatar = *user.Avatar
 	}
 	//if user.Username is nil, that means the client didn't send us username parameter, so we can assign it with the database value
 	//if user.Username is not nil, we know the client send us the parameter, we will use the value to update database.
-	if user.Username == nil {
-		user.Username = dbUser.Username
+	if user.Username != nil {
+		dbUser.Username = *user.Username
 	}
 
-	code, msg = userRepo.Edit(user)
+	code, msg = userRepo.Edit(*dbUser)
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -141,7 +147,7 @@ func (uh *UserHandler)ChangeUserPassword(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	dbUser.Password = &password.Password
+	dbUser.Password = password.Password
 	if code, msg := validator.Validate(dbUser); code == result.Error {//validate password length
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -199,12 +205,12 @@ func (uh *UserHandler)Login(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	if code, msg := userRepo.Login(*user.Email, *user.Password); code != result.Success {
+	if code, msg := userRepo.Login(user.Email, user.Password); code != result.Success {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
 		return
 	}
-	token, err := middleware.GenerateToken(*(user.Email))
+	token, err := middleware.GenerateToken(user.Email)
 	if err != nil {
 		c.JSON(http.StatusOK, result.CodeMessage(result.CantGenerateToken, nil))
 		c.Abort()
