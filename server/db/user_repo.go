@@ -86,7 +86,7 @@ func (ur *UserRepo)GetAllUsers(username string, pageSize int, pageNumber int) (i
 	var total int64
 	if username == "" {//select all users
 		DB.Model(&[]model.User{}).Count(&total)
-		if err = DB.Model(&[]model.User{}).Limit(pageSize).Offset(pageNumber-1).Find(&users).Error;
+		if err = DB.Model(&[]model.User{}).Limit(pageSize).Offset(pageNumber).Find(&users).Error;
 			err != nil {
 			msg := err.Error()
 			return result.Error, &msg, users, 0

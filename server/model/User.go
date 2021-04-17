@@ -3,9 +3,6 @@ package model
 import (
 	"gorm.io/gorm"
 )
-//For these fields we use point, because point can be null.
-//So we can distinguish if the client sends us includes the filed or not.
-//If some fields are still nil after `ShouldBindJSON`, that means the client didn't send us these parameters.
 
 type User struct {
 	gorm.Model
