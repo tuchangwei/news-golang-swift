@@ -1,9 +1,7 @@
 package db
 
 import (
-	"golang.org/x/crypto/bcrypt"
 	"server/model"
-	"server/utils"
 	"server/utils/result"
 )
 
@@ -14,27 +12,18 @@ type PostRepo struct {
 func NewPostRepo() *PostRepo {
 	return &PostRepo{}
 }
-func (ur *PostRepo) CheckExistViaEmail(email string) (code int, user *model.User) {
-	var u model.User
-	err := DB.Select("*").Where("email = ?", email).First(&u).Error
+func (pr *PostRepo) CheckExistViaID(id int) (code int, post model.Post) {
+	var p = model.Post{}
+	p.ID = uint(id)
+	err := DB.Select("*").First(&p).Error
 	if err != nil {
-		return result.UserNotExist, nil
+		return result.PostNotExist, p
 	}
-	return result.UserExist, &u
-}
-func (ur *PostRepo) CheckExistViaID(id int) (code int, user *model.User) {
-	var u model.User
-	err := DB.Select("*").Where("id = ?", id).First(&u).Error
-	if err != nil {
-		return result.UserNotExist, nil
-	}
-	return result.UserExist, &u
+	return result.Success, p
 }
 
-
-func (ur *PostRepo) Insert(user model.User) (code int, message *string) {
-	user.Password = utils.Encrypt(user.Password)
-	err := DB.Create(&user).Error
+func (pr *PostRepo) Insert(post model.Post) (code int, message *string) {
+	err := DB.Create(&post).Error
 	if err != nil {
 		msg := err.Error()
 		return result.Error, &msg
@@ -42,9 +31,10 @@ func (ur *PostRepo) Insert(user model.User) (code int, message *string) {
 	return result.Success, nil
 }
 
-func (ur *PostRepo) DeleteVia(userID int) (code int, message *string) {
-	var user model.User
-	err := DB.Where("id = ?", userID).Delete(&user).Error
+func (pr *PostRepo) DeleteVia(postID int) (code int, message *string) {
+	post := model.Post{}
+	post.ID = uint(postID)
+	err := DB.Delete(post).Error
 	if err != nil {
 		msg := err.Error()
 		return result.Error, &msg
@@ -52,8 +42,8 @@ func (ur *PostRepo) DeleteVia(userID int) (code int, message *string) {
 	return result.Success, nil
 }
 
-func (ur *PostRepo) Edit(user model.User) (code int, message *string) {
-	err := DB.Model(&user).Where("id = ?", user.ID).Select("username", "avatar", "role").Updates(&user).Error
+func (pr *PostRepo) Edit(post model.Post) (code int, message *string) {
+	err := DB.Model(&post).Select("title", "content", "post_type").Updates(&post).Error
 	if err != nil {
 		msg := err.Error()
 		return result.Error, &msg
@@ -61,56 +51,32 @@ func (ur *PostRepo) Edit(user model.User) (code int, message *string) {
 	return result.Success, nil
 }
 
-func (ur *PostRepo) ChangePassword(user model.User) (code int, message *string) {
-	user.Password = utils.Encrypt(user.Password)
-	err := DB.Model(&user).Where("id = ?", user.ID).Select("password").Updates(&user).Error
-	if err != nil {
-		msg := err.Error()
-		return result.Error, &msg
-	}
-	return result.Success, nil
-}
 
-func (ur *PostRepo) GetVia(userID int) (code int, message *string, user model.APIUser) {
-	var apiUser model.APIUser
-	err := DB.Model(&model.User{}).Where("id = ?", userID).First(&apiUser).Error
+func (pr *PostRepo) GetVia(postID int) (code int, message *string, post model.Post) {
+	var p = model.Post {}
+	p.ID = uint(postID)
+	err := DB.Model(&p).First(&p).Error
 	if err != nil {
 		msg := err.Error()
-		return result.Error, &msg, apiUser
+		return result.Error, &msg, p
 	}
-	return result.Success, nil, apiUser
+	return result.Success, nil, p
 }
-func (ur *PostRepo)GetAllUsers(username string, pageSize int, pageNumber int) (int, *string, []model.APIUser, int64) {
-	var users []model.APIUser
-	var err error
+func (pr *PostRepo) GetAllPosts(userID int, pageSize int, pageNumber int) (code int, message *string, posts []model.Post, count int64) {
+	var ps []model.Post
+	var query = DB.Model(&model.Post{})
+	if userID != 0 {
+		query = query.Where("user_id=?", userID)
+	}
 	var total int64
-	if username == "" {//select all users
-		DB.Model(&[]model.User{}).Count(&total)
-		if err = DB.Model(&[]model.User{}).Limit(pageSize).Offset(pageNumber).Find(&users).Error;
-			err != nil {
-			msg := err.Error()
-			return result.Error, &msg, users, 0
-		}
-	} else { // select all users with the same username
-		DB.Model(&[]model.User{}).Where("username like ?", username).Count(&total)
-		if err = DB.Model(&[]model.User{}).Where("username like ?", username).Limit(pageSize).Offset(pageNumber).Find(&users).Error;
-			err != nil {
-			msg := err.Error()
-			return result.Error, &msg, users, 0
-		}
+	query.Count(&total)
+	err := DB.Model(&model.Post{}).Limit(pageSize).Offset(pageNumber).Order("created_at desc").Find(&ps).Error
+	if err != nil {
+		msg := err.Error()
+		return result.Error, &msg, ps, total
 	}
-	return result.Success, nil, users, total
+	return result.Success, nil, ps, total
 }
-func (ur *PostRepo) Login(email string, password string) (code int, message *string) {
-	var user model.User
-	if err := DB.Select("password").Where("email = ?", email).First(&user).Error; err != nil {
-		return result.UserNotExist, nil
-	}
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		return result.UserPasswordNotRight, nil
-	}
-	return result.Success, nil
-}
-func (ur *PostRepo) DeleteAll() {
-	DB.Exec("DELETE FROM users")
+func (pr *PostRepo) DeleteAll() {
+	DB.Exec("DELETE FROM posts")
 }

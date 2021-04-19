@@ -2,6 +2,7 @@ package db
 
 import (
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm/clause"
 	"server/model"
 	"server/utils"
 	"server/utils/result"
@@ -13,21 +14,21 @@ type UserRepo struct {
 func NewUserRepo() *UserRepo {
 	return &UserRepo{}
 }
-func (ur *UserRepo) CheckExistViaEmail(email string) (code int, user *model.User) {
-	var u model.User
+func (ur *UserRepo) CheckExistViaEmail(email string) (code int, user model.User) {
+	u := model.User{}
 	err := DB.Select("*").Where("email = ?", email).First(&u).Error
 	if err != nil {
-		return result.UserNotExist, nil
+		return result.UserNotExist, u
 	}
-	return result.UserExist, &u
+	return result.UserExist, u
 }
-func (ur *UserRepo) CheckExistViaID(id int) (code int, user *model.User) {
-	var u model.User
+func (ur *UserRepo) CheckExistViaID(id int) (code int, user model.User) {
+	var u = model.User{}
 	err := DB.Select("*").Where("id = ?", id).First(&u).Error
 	if err != nil {
-		return result.UserNotExist, nil
+		return result.UserNotExist, u
 	}
-	return result.UserExist, &u
+	return result.UserExist, u
 }
 
 
@@ -41,9 +42,10 @@ func (ur *UserRepo) Insert(user model.User) (code int, message *string) {
 	return result.Success, nil
 }
 
-func (ur *UserRepo) DeleteVia(userID int) (code int, message *string) {
-	var user model.User
-	err := DB.Where("id = ?", userID).Delete(&user).Error
+func (ur *UserRepo) DeleteVia(userID uint) (code int, message *string) {
+	user := model.User{}
+	user.ID = userID
+	err := DB.Select(clause.Associations).Delete(&user).Error
 	if err != nil {
 		msg := err.Error()
 		return result.Error, &msg
@@ -52,7 +54,7 @@ func (ur *UserRepo) DeleteVia(userID int) (code int, message *string) {
 }
 
 func (ur *UserRepo) Edit(user model.User) (code int, message *string) {
-	err := DB.Model(&user).Where("id = ?", user.ID).Select("username", "avatar", "role").Updates(&user).Error
+	err := DB.Model(&user).Select("username", "avatar", "role").Updates(&user).Error
 	if err != nil {
 		msg := err.Error()
 		return result.Error, &msg
@@ -62,7 +64,7 @@ func (ur *UserRepo) Edit(user model.User) (code int, message *string) {
 
 func (ur *UserRepo) ChangePassword(user model.User) (code int, message *string) {
 	user.Password = utils.Encrypt(user.Password)
-	err := DB.Model(&user).Where("id = ?", user.ID).Select("password").Updates(&user).Error
+	err := DB.Model(&user).Select("password").Updates(&user).Error
 	if err != nil {
 		msg := err.Error()
 		return result.Error, &msg
@@ -72,7 +74,8 @@ func (ur *UserRepo) ChangePassword(user model.User) (code int, message *string) 
 
 func (ur *UserRepo) GetVia(userID int) (code int, message *string, user model.APIUser) {
 	var apiUser model.APIUser
-	err := DB.Model(&model.User{}).Where("id = ?", userID).First(&apiUser).Error
+	apiUser.ID = uint(userID)
+	err := DB.Model(&model.User{}).First(&apiUser).Error
 	if err != nil {
 		msg := err.Error()
 		return result.Error, &msg, apiUser
@@ -101,8 +104,9 @@ func (ur *UserRepo)GetAllUsers(username string, pageSize int, pageNumber int) (i
 	return result.Success, nil, users, total
 }
 func (ur *UserRepo) Login(email string, password string) (code int, message *string) {
-	var user model.User
-	if err := DB.Select("password").Where("email = ?", email).First(&user).Error; err != nil {
+	user := model.User {Email: email}
+
+	if err := DB.Select("password").First(&user).Error; err != nil {
 		return result.UserNotExist, nil
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {

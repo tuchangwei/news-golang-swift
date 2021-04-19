@@ -24,6 +24,9 @@ const (
 	TokenExpired = 2002                  // Signature validation failed
 	NoToken = 2003
 	TokenFormatNotRight = 2004
+
+	//code = 3000... post error
+	PostNotExist = 3002
 )
 var resultCodeMsg = map[int]string{
 	Success: "OK",
@@ -40,6 +43,7 @@ var resultCodeMsg = map[int]string{
 	TokenFormatNotRight: "Token format is incorrect",
 	UserHasNoPermission: "User has no permission",
 	NoEmailInContext: "No email in Context",
+	PostNotExist : "Post is not exist",
 }
 
 func CodeMessage(resultCode int, message *string) gin.H {

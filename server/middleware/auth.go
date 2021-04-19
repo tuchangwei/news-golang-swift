@@ -5,12 +5,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"server/db"
+	"server/model"
 	"server/utils/result"
 	"server/utils/settings"
 	"strings"
 	"time"
 )
 //Doc: https://pkg.go.dev/github.com/dgrijalva/jwt-go@v3.2.0+incompatible
+const (
+	kCurrentUserInContext = "kCurrentUser"
+)
+
 var JwtKey = []byte(settings.JWTKey)
 type MyClaims struct {
 	Email string `json:"email"`
@@ -73,9 +78,13 @@ func VerifyToken() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		userRepo := db.PostRepo{}
+		userRepo := db.UserRepo{}
 		_, user := userRepo.CheckExistViaEmail(*email)
-		c.Set("kCurrentUser", *user)
+		c.Set(kCurrentUserInContext, user)
 		c.Next()
 	}
+}
+func GetCurrentUserInContext(c *gin.Context) model.User {
+	value, _ := c.Get(kCurrentUserInContext)
+	return value.(model.User)
 }

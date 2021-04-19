@@ -13,5 +13,5 @@ require (
 	golang.org/x/crypto v0.0.0-20210415154028-4f45737414dc
 	gopkg.in/ini.v1 v1.62.0
 	gorm.io/driver/mysql v1.0.5
-	gorm.io/gorm v1.21.6
+	gorm.io/gorm v1.21.8
 )

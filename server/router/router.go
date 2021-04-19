@@ -33,18 +33,25 @@ func InitRouter() {
 	authorizedRouter := engine.Group(baseURL)
 	authorizedRouter.Use(middleware.VerifyToken())
 	userHandler := v1.NewUserHandler()
+	postHandler := v1.NewPostHandler()
 	{
 		authorizedRouter.GET("users", userHandler.GetUsers)
 		authorizedRouter.DELETE("users/:id", userHandler.DeleteUser)
 		authorizedRouter.PUT("users/:id", userHandler.EditUser)
 		authorizedRouter.GET("users/:id", userHandler.GetUser)
 		authorizedRouter.POST("changPassword", userHandler.ChangeUserPassword)
+
+		authorizedRouter.POST("posts", postHandler.CreatePost)
+		authorizedRouter.DELETE("posts/:id", postHandler.DeletePost)
+		//Get some user's all posts
+		authorizedRouter.GET("users/:id/posts", postHandler.GetAllPosts)
 	}
 
 	normalRouter := engine.Group(baseURL)
 	{
 		normalRouter.POST("login", userHandler.Login)
 		normalRouter.POST("register", userHandler.CreateUser)
+		normalRouter.GET("posts", postHandler.GetAllPosts)
 	}
 
 	err := engine.Run(":"+ settings.HttpPort)

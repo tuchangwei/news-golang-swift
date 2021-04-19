@@ -12,10 +12,11 @@ import (
 	"strconv"
 )
 
-type UserHandler struct { }
-var userRepo = db.NewUserRepo()
+type UserHandler struct {
+	userRepo *db.UserRepo
+}
 func NewUserHandler() *UserHandler {
-	return &UserHandler{}
+	return &UserHandler{userRepo: db.NewUserRepo()}
 }
 func (uh *UserHandler)CreateUser(c *gin.Context) {
 	var user model.User
@@ -30,13 +31,13 @@ func (uh *UserHandler)CreateUser(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	code, _ = userRepo.CheckExistViaEmail(user.Email)
+	code, _ = uh.userRepo.CheckExistViaEmail(user.Email)
 	if code == result.UserExist {
 		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
 		c.Abort()
 		return
 	}
-	code, msg = userRepo.Insert(user)
+	code, msg = uh.userRepo.Insert(user)
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -54,8 +55,7 @@ func (uh *UserHandler)CreateUser(c *gin.Context) {
 }
 func checkUserPermission(c *gin.Context) bool {
 	id, _ := strconv.Atoi(c.Param("id"))
-	value, _ := c.Get("kCurrentUser")
-	currentUser := value.(model.User)
+	currentUser := middleware.GetCurrentUserInContext(c)
 	if currentUser.ID != uint(id) && currentUser.Role != 2 {
 		c.JSON(http.StatusOK, result.CodeMessage(result.UserHasNoPermission, nil))
 		c.Abort()
@@ -70,13 +70,13 @@ func (uh *UserHandler)DeleteUser(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var code int
 	var msg *string
-	code, _ = userRepo.CheckExistViaID(id)
+	code, _ = uh.userRepo.CheckExistViaID(id)
 	if code == result.UserNotExist {
 		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
 		c.Abort()
 		return
 	}
-	code, msg = userRepo.DeleteVia(id)
+	code, msg = uh.userRepo.DeleteVia(uint(id))
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -104,7 +104,7 @@ func (uh *UserHandler)EditUser(c *gin.Context) {
 	user.ID = uint(id)
 	var code int
 	var msg *string
-	code, dbUser := userRepo.CheckExistViaID(id)
+	code, dbUser := uh.userRepo.CheckExistViaID(id)
 	if code == result.UserNotExist {
 		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
 		c.Abort()
@@ -133,7 +133,7 @@ func (uh *UserHandler)EditUser(c *gin.Context) {
 		dbUser.Username = *user.Username
 	}
 
-	code, msg = userRepo.Edit(*dbUser)
+	code, msg = uh.userRepo.Edit(dbUser)
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -160,7 +160,7 @@ func (uh *UserHandler)ChangeUserPassword(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	code, msg = userRepo.ChangePassword(currentUser)
+	code, msg = uh.userRepo.ChangePassword(currentUser)
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -173,7 +173,7 @@ func (uh *UserHandler)GetUser(c *gin.Context)  {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var user model.User
 	user.ID = uint(id)
-	code, msg, apiUser := userRepo.GetVia(id)
+	code, msg, apiUser := uh.userRepo.GetVia(id)
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -191,7 +191,7 @@ func (uh *UserHandler)GetUsers(c *gin.Context)  {
 		pageSize = 20
 	}
 
-	code, msg, users, total := userRepo.GetAllUsers(username, pageSize, pageNum)
+	code, msg, users, total := uh.userRepo.GetAllUsers(username, pageSize, pageNum)
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -212,7 +212,7 @@ func (uh *UserHandler)Login(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	if code, msg := userRepo.Login(user.Email, user.Password); code != result.Success {
+	if code, msg := uh.userRepo.Login(user.Email, user.Password); code != result.Success {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
 		return

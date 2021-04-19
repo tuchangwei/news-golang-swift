@@ -11,8 +11,8 @@ type User struct {
 	Password string `gorm:"not null" validate:"required,min=6,max=120" json:"password"`
 	Avatar string `json:"avatar"`
 	Role int `gorm:"not null;default:1" json:"role"`//1 normal, 2 admin
-	Following []*User `gorm:"many2many:followings;association_jointable_foreignkey:following_id;constraint:OnUpdate:CASCADE,OnDelete:NO ACTION;"`
-	Follower []*User `gorm:"many2many:followers;association_jointable_foreignkey:follower_id;constraint:OnUpdate:CASCADE,OnDelete:NO ACTION;"`
+	Followings []*User `gorm:"many2many:followings;association_jointable_foreignkey:following_id;constraint:OnUpdate:CASCADE,OnDelete:NO ACTION;"`
+	Followers []*User `gorm:"many2many:followers;association_jointable_foreignkey:follower_id;constraint:OnUpdate:CASCADE,OnDelete:NO ACTION;"`
 	Posts []Post `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 }
