@@ -17,7 +17,7 @@ func InitDB() {
 	if err != nil {
 		log.Fatal("open db error:", err)
 	}
-	err = db.AutoMigrate(&model.User{})
+	err = db.AutoMigrate(&model.User{}, &model.Post{})
 	if err != nil {
 		log.Fatal("auto migrate db error:", err)
 	}

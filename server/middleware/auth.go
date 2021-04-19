@@ -73,7 +73,7 @@ func VerifyToken() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		userRepo := db.UserRepo{}
+		userRepo := db.PostRepo{}
 		_, user := userRepo.CheckExistViaEmail(*email)
 		c.Set("kCurrentUser", *user)
 		c.Next()
