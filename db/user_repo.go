@@ -3,7 +3,6 @@ package db
 import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm/clause"
-	"server/model"
 	"server/utils"
 	"server/utils/result"
 )
@@ -14,17 +13,19 @@ type UserRepo struct {
 func NewUserRepo() *UserRepo {
 	return &UserRepo{}
 }
-func (ur *UserRepo) CheckExistViaEmail(email string) (code int, user model.User) {
-	u := model.User{}
-	err := DB.Select("*").Where("email = ?", email).First(&u).Error
+func (ur *UserRepo) CheckExistViaEmail(email string) (code int, user User) {
+	u := User{}
+	u.Email = email
+	err := DB.Select("*").First(&u).Error
 	if err != nil {
 		return result.UserNotExist, u
 	}
 	return result.UserExist, u
 }
-func (ur *UserRepo) CheckExistViaID(id int) (code int, user model.User) {
-	var u = model.User{}
-	err := DB.Select("*").Where("id = ?", id).First(&u).Error
+func (ur *UserRepo) CheckExistViaID(id int) (code int, user User) {
+	var u = User{}
+	u.ID = uint(id)
+	err := DB.Select("*").First(&u).Error
 	if err != nil {
 		return result.UserNotExist, u
 	}
@@ -32,7 +33,7 @@ func (ur *UserRepo) CheckExistViaID(id int) (code int, user model.User) {
 }
 
 
-func (ur *UserRepo) Insert(user model.User) (code int, message *string) {
+func (ur *UserRepo) Insert(user User) (code int, message *string) {
 	user.Password = utils.Encrypt(user.Password)
 	err := DB.Create(&user).Error
 	if err != nil {
@@ -43,9 +44,9 @@ func (ur *UserRepo) Insert(user model.User) (code int, message *string) {
 }
 
 func (ur *UserRepo) DeleteVia(userID uint) (code int, message *string) {
-	user := model.User{}
+	user := User{}
 	user.ID = userID
-	err := DB.Select(clause.Associations).Delete(&user).Error
+	err := DB.Debug().Select(clause.Associations).Delete(&user).Error
 	if err != nil {
 		msg := err.Error()
 		return result.Error, &msg
@@ -53,7 +54,7 @@ func (ur *UserRepo) DeleteVia(userID uint) (code int, message *string) {
 	return result.Success, nil
 }
 
-func (ur *UserRepo) Edit(user model.User) (code int, message *string) {
+func (ur *UserRepo) Edit(user User) (code int, message *string) {
 	err := DB.Model(&user).Select("username", "avatar", "role").Updates(&user).Error
 	if err != nil {
 		msg := err.Error()
@@ -62,7 +63,7 @@ func (ur *UserRepo) Edit(user model.User) (code int, message *string) {
 	return result.Success, nil
 }
 
-func (ur *UserRepo) ChangePassword(user model.User) (code int, message *string) {
+func (ur *UserRepo) ChangePassword(user User) (code int, message *string) {
 	user.Password = utils.Encrypt(user.Password)
 	err := DB.Model(&user).Select("password").Updates(&user).Error
 	if err != nil {
@@ -72,30 +73,30 @@ func (ur *UserRepo) ChangePassword(user model.User) (code int, message *string) 
 	return result.Success, nil
 }
 
-func (ur *UserRepo) GetVia(userID int) (code int, message *string, user model.APIUser) {
-	var apiUser model.APIUser
+func (ur *UserRepo) GetVia(userID int) (code int, message *string, user APIUser) {
+	var apiUser APIUser
 	apiUser.ID = uint(userID)
-	err := DB.Model(&model.User{}).First(&apiUser).Error
+	err := DB.Model(&User{}).First(&apiUser).Error
 	if err != nil {
 		msg := err.Error()
 		return result.Error, &msg, apiUser
 	}
 	return result.Success, nil, apiUser
 }
-func (ur *UserRepo)GetAllUsers(username string, pageSize int, pageNumber int) (int, *string, []model.APIUser, int64) {
-	var users []model.APIUser
+func (ur *UserRepo)GetAllUsers(username string, pageSize int, pageNumber int) (int, *string, []APIUser, int64) {
+	var users []APIUser
 	var err error
 	var total int64
 	if username == "" {//select all users
-		DB.Model(&[]model.User{}).Count(&total)
-		if err = DB.Model(&[]model.User{}).Limit(pageSize).Offset(pageNumber).Find(&users).Error;
+		DB.Model(&[]User{}).Count(&total)
+		if err = DB.Model(&[]User{}).Limit(pageSize).Offset(pageNumber).Find(&users).Error;
 			err != nil {
 			msg := err.Error()
 			return result.Error, &msg, users, 0
 		}
 	} else { // select all users with the same username
-		DB.Model(&[]model.User{}).Where("username like ?", username).Count(&total)
-		if err = DB.Model(&[]model.User{}).Where("username like ?", username).Limit(pageSize).Offset(pageNumber).Find(&users).Error;
+		DB.Model(&[]User{}).Where("username like ?", username).Count(&total)
+		if err = DB.Model(&[]User{}).Where("username like ?", username).Limit(pageSize).Offset(pageNumber).Find(&users).Error;
 			err != nil {
 			msg := err.Error()
 			return result.Error, &msg, users, 0
@@ -104,7 +105,7 @@ func (ur *UserRepo)GetAllUsers(username string, pageSize int, pageNumber int) (i
 	return result.Success, nil, users, total
 }
 func (ur *UserRepo) Login(email string, password string) (code int, message *string) {
-	user := model.User {Email: email}
+	user := User{Email: email}
 
 	if err := DB.Select("password").First(&user).Error; err != nil {
 		return result.UserNotExist, nil

@@ -32,7 +32,7 @@ func InitSettings() {
 	switch env {
 	case "dev":
 		fmt.Println("You are under Development environment")
-		file, err =  ini.Load("config/config.ini")
+		file, err =  ini.Load("/Users/tcw/Documents/Workspace/Mine/news-golang-swift-server/config/config.ini")
 	case "pro":
 		fmt.Println("You are under Production environment")
 		file, err =  ini.Load("../../news-golang-swift-production-config/config.ini")

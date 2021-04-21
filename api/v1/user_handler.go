@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"server/db"
 	"server/middleware"
-	"server/model"
 	"server/utils"
 	"server/utils/result"
 	"server/utils/validator"
@@ -13,13 +12,12 @@ import (
 )
 
 type UserHandler struct {
-	userRepo *db.UserRepo
 }
 func NewUserHandler() *UserHandler {
-	return &UserHandler{userRepo: db.NewUserRepo()}
+	return &UserHandler{}
 }
 func (uh *UserHandler)CreateUser(c *gin.Context) {
-	var user model.User
+	var user db.User
 	if utils.HandleBindJSON(&user, c) != nil {
 		return
 	}
@@ -31,13 +29,13 @@ func (uh *UserHandler)CreateUser(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	code, _ = uh.userRepo.CheckExistViaEmail(user.Email)
+	user.CheckExistViaEmail()
 	if code == result.UserExist {
 		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
 		c.Abort()
 		return
 	}
-	code, msg = uh.userRepo.Insert(user)
+	code, msg = user.Insert()
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -70,13 +68,15 @@ func (uh *UserHandler)DeleteUser(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var code int
 	var msg *string
-	code, _ = uh.userRepo.CheckExistViaID(id)
+	user := db.User{}
+	user.ID = uint(id)
+	code = user.CheckExistViaID()
 	if code == result.UserNotExist {
 		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
 		c.Abort()
 		return
 	}
-	code, msg = uh.userRepo.DeleteVia(uint(id))
+	code, msg = user.DeleteViaID()
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -97,43 +97,44 @@ func (uh *UserHandler)EditUser(c *gin.Context) {
 		Role *int `json:"role"`//1 normal, 2 admin
 		ID   uint `json:"id"`
 	}
-	var user UserParam
-	if utils.HandleBindJSON(&user, c) != nil {
+	var param UserParam
+	if utils.HandleBindJSON(&param, c) != nil {
 		return
 	}
+	user := db.User{}
 	user.ID = uint(id)
 	var code int
 	var msg *string
-	code, dbUser := uh.userRepo.CheckExistViaID(id)
+	code = user.CheckExistViaID()
 	if code == result.UserNotExist {
 		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
 		c.Abort()
 		return
 	}
 
-	//if user.Role is nil, that means the client didn't send us Role parameter, so we can assign it with the database value
-	//if user.Role is not nil, we know the client send us the parameter, we will use the value to update database.
-	if user.Role != nil {
-		if *(user.Role) != 1 && *(user.Role) != 2 {
+	//if param.Role is nil, that means the client didn't send us Role parameter, so we can assign it with the database value
+	//if param.Role is not nil, we know the client send us the parameter, we will use the value to update database.
+	if param.Role != nil {
+		if *(param.Role) != 1 && *(param.Role) != 2 {
 			c.JSON(http.StatusOK, result.CodeMessage(result.UserRoleValueNotRight, nil))
 			c.Abort()
 			return
 		}
-		dbUser.Role = *user.Role
+		user.Role = *param.Role
 	}
 
-	//if user.Avatar is nil, that means the client didn't send us avatar parameter, so we can assign it with the database value
-	//if user.Avatar is not nil, we know the client send us the parameter, we will use the value to update database.
-	if user.Avatar != nil {
-		dbUser.Avatar = *user.Avatar
+	//if param.Avatar is nil, that means the client didn't send us avatar parameter, so we can assign it with the database value
+	//if param.Avatar is not nil, we know the client send us the parameter, we will use the value to update database.
+	if param.Avatar != nil {
+		user.Avatar = *param.Avatar
 	}
-	//if user.Username is nil, that means the client didn't send us username parameter, so we can assign it with the database value
-	//if user.Username is not nil, we know the client send us the parameter, we will use the value to update database.
-	if user.Username != nil {
-		dbUser.Username = *user.Username
+	//if param.Username is nil, that means the client didn't send us username parameter, so we can assign it with the database value
+	//if param.Username is not nil, we know the client send us the parameter, we will use the value to update database.
+	if param.Username != nil {
+		user.Username = *param.Username
 	}
 
-	code, msg = uh.userRepo.Edit(dbUser)
+	code, msg = user.Edit()
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -151,7 +152,7 @@ func (uh *UserHandler)ChangeUserPassword(c *gin.Context) {
 		return
 	}
 	value, _ := c.Get("kCurrentUser")
-	currentUser := value.(model.User)
+	currentUser := value.(db.User)
 	var code int
 	var msg *string
 	currentUser.Password = password.Password
@@ -160,7 +161,7 @@ func (uh *UserHandler)ChangeUserPassword(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	code, msg = uh.userRepo.ChangePassword(currentUser)
+	code, msg = currentUser.ChangePassword()
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -171,9 +172,9 @@ func (uh *UserHandler)ChangeUserPassword(c *gin.Context) {
 
 func (uh *UserHandler)GetUser(c *gin.Context)  {
 	id, _ := strconv.Atoi(c.Param("id"))
-	var user model.User
+	var user db.User
 	user.ID = uint(id)
-	code, msg, apiUser := uh.userRepo.GetVia(id)
+	code, msg, apiUser := user.GetViaID()
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -190,8 +191,8 @@ func (uh *UserHandler)GetUsers(c *gin.Context)  {
 	if pageSize == 0 {
 		pageSize = 20
 	}
-
-	code, msg, users, total := uh.userRepo.GetAllUsers(username, pageSize, pageNum)
+	user := db.User{}
+	code, msg, users, total := user.GetAllUsers(username, pageSize, pageNum)
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -203,7 +204,7 @@ func (uh *UserHandler)GetUsers(c *gin.Context)  {
 	c.JSON(http.StatusOK, codeMsg)
 }
 func (uh *UserHandler)Login(c *gin.Context) {
-	var user model.User
+	var user db.User
 	if err := utils.HandleBindJSON(&user, c); err != nil {
 		return
 	}
@@ -212,7 +213,7 @@ func (uh *UserHandler)Login(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	if code, msg := uh.userRepo.Login(user.Email, user.Password); code != result.Success {
+	if code, msg := user.LoginWithEmailAndPassword(); code != result.Success {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
 		return

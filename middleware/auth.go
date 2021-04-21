@@ -5,7 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"server/db"
-	"server/model"
 	"server/utils/result"
 	"server/utils/settings"
 	"strings"
@@ -84,7 +83,7 @@ func VerifyToken() gin.HandlerFunc {
 		c.Next()
 	}
 }
-func GetCurrentUserInContext(c *gin.Context) model.User {
+func GetCurrentUserInContext(c *gin.Context) db.User {
 	value, _ := c.Get(kCurrentUserInContext)
-	return value.(model.User)
+	return value.(db.User)
 }
