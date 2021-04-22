@@ -58,3 +58,6 @@ func CodeMessage(resultCode int, message *string) gin.H {
 		MessageKey: msg,
 	}
 }
+func GetMessage(code int) string {
+	return resultCodeMsg[code]
+}

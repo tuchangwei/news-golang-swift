@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"server/db"
 	"server/middleware"
-	"server/model"
 	"server/utils"
 	"server/utils/result"
 	"strconv"
@@ -18,7 +17,7 @@ func NewPostHandler() *PostHandler {
 	return &PostHandler{postRepo: db.NewPostRepo()}
 }
 func (ph *PostHandler)CreatePost(c *gin.Context) {
-	var post model.Post
+	var post db.Post
 	if utils.HandleBindJSON(&post, c) != nil {
 		return
 	}
@@ -58,7 +57,7 @@ func (ph *PostHandler)DeletePost(c *gin.Context) {
 
 func (ph *PostHandler)GetPost(c *gin.Context)  {
 	id, _ := strconv.Atoi(c.Param("id"))
-	var post model.Post
+	var post db.Post
 	post.ID = uint(id)
 	code, msg, apiUser := ph.postRepo.GetVia(id)
 	if code == result.Error {

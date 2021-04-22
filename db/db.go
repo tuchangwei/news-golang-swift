@@ -5,7 +5,6 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
-	"server/model"
 	"server/utils/settings"
 )
 var DB *gorm.DB
@@ -17,8 +16,7 @@ func InitDB() {
 	if err != nil {
 		log.Fatal("open db error:", err)
 	}
-	db.Migrator().DropTable(&User{}, &model.Post{}, &Friend{})
-	err = db.AutoMigrate(&User{}, &model.Post{}, &Friend{})
+	err = db.AutoMigrate(&User{}, &Post{}, &Friend{})
 	if err != nil {
 		log.Fatal("auto migrate db error:", err)
 	}

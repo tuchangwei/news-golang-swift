@@ -3,7 +3,6 @@ package router
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"log"
 	"net/http"
 	v1 "server/api/v1"
 	"server/middleware"
@@ -13,8 +12,16 @@ import (
 const (
 	Version = "v1"
 )
+//var NewRouter *gin.Engine
+//var BaseURL string
 
-func InitRouter() {
+type Router struct {
+	Engine *gin.Engine
+	AuthorizedRouter *gin.RouterGroup
+	NormalRouter *gin.RouterGroup
+}
+
+func NewRouter() *Router {
 	gin.SetMode(settings.AppMode)
 	engine := gin.Default()
 	engine.Handle(http.MethodGet, "/", func(c *gin.Context) {
@@ -39,7 +46,7 @@ func InitRouter() {
 		authorizedRouter.DELETE("users/:id", userHandler.DeleteUser)
 		authorizedRouter.PUT("users/:id", userHandler.EditUser)
 		authorizedRouter.GET("users/:id", userHandler.GetUser)
-		authorizedRouter.POST("changPassword", userHandler.ChangeUserPassword)
+		authorizedRouter.POST("changePassword", userHandler.ChangeUserPassword)
 
 		authorizedRouter.POST("posts", postHandler.CreatePost)
 		authorizedRouter.DELETE("posts/:id", postHandler.DeletePost)
@@ -53,9 +60,10 @@ func InitRouter() {
 		normalRouter.POST("register", userHandler.CreateUser)
 		normalRouter.GET("posts", postHandler.GetAllPosts)
 	}
-
-	err := engine.Run(":"+ settings.HttpPort)
-	if err != nil {
-		log.Fatal("can't start server", err)
+	router := Router{
+		Engine: engine,
+		AuthorizedRouter: authorizedRouter,
+		NormalRouter: normalRouter,
 	}
+	return &router
 }

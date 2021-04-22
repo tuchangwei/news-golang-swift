@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"server/db"
 	"server/router"
 	"server/utils/settings"
@@ -9,5 +10,9 @@ import (
 func main() {
 	settings.InitSettings()
 	db.InitDB()
-	router.InitRouter()
+	router := router.NewRouter()
+	err := router.Engine.Run(":"+ settings.HttpPort)
+	if err != nil {
+		log.Fatal("can't start server", err)
+	}
 }

@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 	"os"
 	"server/utils/result"
 	"server/utils/settings"
@@ -19,6 +20,7 @@ func setup() {
 	fmt.Println("_________test start__________")
 	settings.InitSettings()
 	InitDB()
+	DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&User{})
 }
 func shutdown() {
 	fmt.Println("_________test end__________")

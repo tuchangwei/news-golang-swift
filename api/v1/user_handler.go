@@ -10,7 +10,9 @@ import (
 	"server/utils/validator"
 	"strconv"
 )
-
+type Password struct {
+	Password string `json:"password"`
+}
 type UserHandler struct {
 }
 func NewUserHandler() *UserHandler {
@@ -144,9 +146,7 @@ func (uh *UserHandler)EditUser(c *gin.Context) {
 }
 
 func (uh *UserHandler)ChangeUserPassword(c *gin.Context) {
-	type Password struct {
-		Password string `json:"password"`
-	}
+
 	var password Password
 	if utils.HandleBindJSON(&password, c) != nil {
 		return

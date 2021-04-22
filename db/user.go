@@ -4,7 +4,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"server/model"
 	"server/utils"
 	"server/utils/result"
 	"time"
@@ -12,9 +11,9 @@ import (
 
 type User struct {
 	gorm.Model
-	Email string `gorm:"not null" validate:"required,email" json:"email"`
+	Email string    `gorm:"not null" validate:"required,email" json:"email"`
 	Password string `gorm:"not null" validate:"required,min=6,max=120" json:"password"`
-	Posts []model.Post `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Posts []Post    `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	UserInfo
 }
 type Friend struct {
