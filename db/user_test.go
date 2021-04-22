@@ -3,29 +3,12 @@ package db
 import (
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
-	"os"
 	"server/utils/result"
-	"server/utils/settings"
 	"testing"
 )
 
-func TestMain(m *testing.M) {
-	setup()
-	code := m.Run()
-	shutdown()
-	os.Exit(code)
-}
-func setup() {
-	fmt.Println("_________test start__________")
-	settings.InitSettings()
-	InitDB()
-	DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&User{})
-}
-func shutdown() {
-	fmt.Println("_________test end__________")
-}
-func insertUser(t *testing.T) User {
+
+func InsertUser(t *testing.T) User {
 	user := &User{Email: "changweitu@gmail.com", Password: "123456"}
 	gotCode, gotMsg := user.Insert()
 	if gotCode != result.Success {
@@ -34,7 +17,7 @@ func insertUser(t *testing.T) User {
 	return *user
 }
 func TestUser_CheckExistViaEmail(t *testing.T) {
-	user := insertUser(t)
+	user := InsertUser(t)
 	user.ID = 2
 	gotCode := user.CheckExistViaEmail()
 	if gotCode != result.UserExist {
@@ -42,21 +25,21 @@ func TestUser_CheckExistViaEmail(t *testing.T) {
 	}
 }
 func TestUser_CheckExistViaID(t *testing.T) {
-	user := insertUser(t)
+	user := InsertUser(t)
 	gotCode := user.CheckExistViaID()
 	if gotCode != result.UserExist {
 		t.Fatal("got code:", gotCode)
 	}
 }
 func TestUser_Insert(t *testing.T) {
-	insertUser(t)
+	InsertUser(t)
 }
 func TestUser_DeleteViaID(t *testing.T) {
-	user := insertUser(t)
+	user := InsertUser(t)
 	user.DeleteViaID()
 }
 func TestUser_EditAndGet(t *testing.T) {
-	user := insertUser(t)
+	user := InsertUser(t)
 	user.Username = "tu"
 	user.Avatar = "xxx___xxx"
 	user.Role = 2
@@ -70,7 +53,7 @@ func TestUser_EditAndGet(t *testing.T) {
 }
 func TestUser_ChangePassword(t *testing.T) {
 	pwd := "666666"
-	user := insertUser(t)
+	user := InsertUser(t)
 	t.Log(user.Password)
 	user.Password = pwd
 	code, msg := user.ChangePassword()

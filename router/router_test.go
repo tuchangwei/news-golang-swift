@@ -196,6 +196,32 @@ func TestChangePassword(t *testing.T) {
 	assert.Equal(t, result.GetMessage(result.Success), data.Message)
 	token = login(email, newPwd.Password, t)
 }
+func TestCreatePost(t *testing.T) {
+	email := "1@1.com"
+	password := "123456"
+	user := &db.User{Email: email, Password: password}
+	user.Insert()
+
+	token := login(email, password, t)
+	post := db.Post{
+		Title:    "Hello",
+		PostType: 0,
+		Content:  "This is a post",
+	}
+	postBytes, _ := json.Marshal(post)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodPost, router.AuthorizedRouter.BasePath() + "/posts", bytes.NewBuffer(postBytes))
+	req.Header.Add("Authorization", "Bearer " + token)
+	router.Engine.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	var data = ResponseData{}
+	json.Unmarshal(w.Body.Bytes(), &data)
+	assert.Equal(t, result.GetMessage(result.Success), data.Message)
+}
+func TestDeletePost(t *testing.T) {
+
+}
 
 func login(email string, password string, t *testing.T) (token string) {
 	t.Helper()

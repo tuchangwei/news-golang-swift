@@ -11,10 +11,9 @@ import (
 )
 
 type PostHandler struct {
-	postRepo *db.PostRepo
 }
 func NewPostHandler() *PostHandler {
-	return &PostHandler{postRepo: db.NewPostRepo()}
+	return &PostHandler{}
 }
 func (ph *PostHandler)CreatePost(c *gin.Context) {
 	var post db.Post
@@ -24,7 +23,7 @@ func (ph *PostHandler)CreatePost(c *gin.Context) {
 	post.UserID = middleware.GetCurrentUserInContext(c).ID
 	var code int
 	var msg *string
-	code, msg = ph.postRepo.Insert(post)
+	code, msg = post.Insert()
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -40,13 +39,15 @@ func (ph *PostHandler)DeletePost(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var code int
 	var msg *string
-	code, _ = ph.postRepo.CheckExistViaID(id)
+	post := db.Post{}
+	post.ID = uint(id)
+	code = post.CheckExistViaID()
 	if code == result.PostNotExist {
 		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
 		c.Abort()
 		return
 	}
-	code, msg = ph.postRepo.DeleteVia(id)
+	code, msg = post.DeleteViaID()
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
@@ -59,14 +60,14 @@ func (ph *PostHandler)GetPost(c *gin.Context)  {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var post db.Post
 	post.ID = uint(id)
-	code, msg, apiUser := ph.postRepo.GetVia(id)
+	code, msg := post.GetViaID()
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
 		return
 	}
 	var codeMsg = result.CodeMessage(code, msg)
-	codeMsg["data"] = apiUser
+	codeMsg["data"] = post
 	c.JSON(http.StatusOK, codeMsg)
 }
 func (ph *PostHandler)GetAllPosts(c *gin.Context)  {
@@ -76,8 +77,8 @@ func (ph *PostHandler)GetAllPosts(c *gin.Context)  {
 	if pageSize == 0 {
 		pageSize = 20
 	}
-
-	code, msg, posts, total := ph.postRepo.GetAllPosts(userID, pageSize, pageNum)
+	post := db.Post{}
+	code, msg, posts, total := post.GetAllPosts(userID, pageSize, pageNum)
 	if code == result.Error {
 		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
 		c.Abort()
