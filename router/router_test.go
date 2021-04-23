@@ -9,10 +9,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	v1 "server/api/v1"
+	"server/api"
 	"server/db"
 	"server/utils/result"
 	"server/utils/settings"
+	"strconv"
 	"testing"
 )
 type ResponseData struct {
@@ -81,7 +82,7 @@ func TestGetUsers(t *testing.T) {
 	token := login(email, password, t)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, router.AuthorizedRouter.BasePath() + "/users",nil)
+	req, _ := http.NewRequest(http.MethodGet, router.AuthorizedRouter.BasePath() + "/users?pageNum=1&pageSize=20",nil)
 	req.Header.Add("Authorization", "Bearer " + token)
 	router.Engine.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
@@ -181,7 +182,7 @@ func TestChangePassword(t *testing.T) {
 	token := login(email, password, t)
 
 	w := httptest.NewRecorder()
-	newPwd := v1.Password{Password: "12345678"}
+	newPwd := api.Password{Password: "12345678"}
 	pwdBytes, _ := json.Marshal(newPwd)
 	req, _ := http.NewRequest(http.MethodPost, router.AuthorizedRouter.BasePath() + "/changePassword", bytes.NewBuffer(pwdBytes))
 	req.Header.Add("Authorization", "Bearer " + token)
@@ -220,7 +221,57 @@ func TestCreatePost(t *testing.T) {
 	assert.Equal(t, result.GetMessage(result.Success), data.Message)
 }
 func TestDeletePost(t *testing.T) {
+	email := "1@1.com"
+	password := "123456"
+	user := &db.User{Email: email, Password: password}
+	user.Insert()
+	post := &db.Post{
+		Title:    "Hello",
+		PostType: 1,
+		Content:  "Hello world",
+		UserID:   user.ID,
+	}
+	post.Insert()
 
+	token := login(email, password, t)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodDelete, router.AuthorizedRouter.BasePath() + "/posts/" + strconv.Itoa(int(post.ID)), nil)
+	req.Header.Add("Authorization", "Bearer " + token)
+	router.Engine.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	var data = ResponseData{}
+	json.Unmarshal(w.Body.Bytes(), &data)
+	assert.Equal(t, result.GetMessage(result.Success), data.Message)
+}
+func TestGetAllPosts(t *testing.T) {
+	email := "1@1.com"
+	password := "123456"
+	user := &db.User{Email: email, Password: password}
+	user.Insert()
+	for i := 0; i < 21; i++ {
+		post := &db.Post{
+			Title:    "Hello" + strconv.Itoa(i),
+			PostType: 1,
+			Content:  "Hello world",
+			UserID:   user.ID,
+		}
+		post.Insert()
+	}
+
+	token := login(email, password, t)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodGet,
+		router.AuthorizedRouter.BasePath() + "/users/" + strconv.Itoa(int(user.ID)) + "/posts?pageNum=2&pageSize=20",
+		nil)
+	req.Header.Add("Authorization", "Bearer " + token)
+	router.Engine.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	var data = ResponseData{}
+	json.Unmarshal(w.Body.Bytes(), &data)
+	assert.Equal(t, result.GetMessage(result.Success), data.Message)
+	t.Log(w.Body.String())
 }
 
 func login(email string, password string, t *testing.T) (token string) {

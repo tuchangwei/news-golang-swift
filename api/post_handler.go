@@ -1,4 +1,4 @@
-package v1
+package api
 
 import (
 	"github.com/gin-gonic/gin"
@@ -33,9 +33,6 @@ func (ph *PostHandler)CreatePost(c *gin.Context) {
 }
 
 func (ph *PostHandler)DeletePost(c *gin.Context) {
-	if !checkUserPermission(c) {
-		return
-	}
 	id, _ := strconv.Atoi(c.Param("id"))
 	var code int
 	var msg *string
@@ -46,6 +43,11 @@ func (ph *PostHandler)DeletePost(c *gin.Context) {
 		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
 		c.Abort()
 		return
+	}
+	currentUser := middleware.GetCurrentUserInContext(c)
+	if currentUser.ID != post.UserID && currentUser.Role != 2 {
+		c.JSON(http.StatusOK, result.CodeMessage(result.UserHasNoPermission, nil))
+		c.Abort()
 	}
 	code, msg = post.DeleteViaID()
 	if code == result.Error {

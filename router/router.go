@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	v1 "server/api/v1"
+	"server/api"
 	"server/middleware"
 	"server/utils/settings"
 )
@@ -39,8 +39,8 @@ func NewRouter() *Router {
 	baseURL := fmt.Sprintf("api/%s", Version)
 	authorizedRouter := engine.Group(baseURL)
 	authorizedRouter.Use(middleware.VerifyToken())
-	userHandler := v1.NewUserHandler()
-	postHandler := v1.NewPostHandler()
+	userHandler := api.NewUserHandler()
+	postHandler := api.NewPostHandler()
 	{
 		authorizedRouter.GET("users", userHandler.GetUsers)
 		authorizedRouter.DELETE("users/:id", userHandler.DeleteUser)

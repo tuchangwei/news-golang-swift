@@ -66,7 +66,7 @@ func (p *Post) GetAllPosts(userID int, pageSize int, pageNumber int) (code int, 
 	if pageSize == 0 {
 		pageSize = 20
 	}
-	err := DB.Model(&Post{}).Limit(pageSize).Offset(pageNumber*pageSize).Order("created_at desc").Find(&ps).Error
+	err := query.Limit(pageSize).Offset(pageNumber*pageSize).Order("created_at desc").Find(&ps).Error
 	if err != nil {
 		msg := err.Error()
 		return result.Error, &msg, ps, total
