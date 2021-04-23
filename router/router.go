@@ -9,19 +9,13 @@ import (
 	"server/utils/settings"
 )
 
-const (
-	Version = "v1"
-)
+
 //var NewRouter *gin.Engine
 //var BaseURL string
 
-type Router struct {
-	Engine *gin.Engine
-	AuthorizedRouter *gin.RouterGroup
-	NormalRouter *gin.RouterGroup
-}
 
-func NewRouter() *Router {
+
+func NewRouter() *gin.Engine {
 	gin.SetMode(settings.AppMode)
 	engine := gin.Default()
 	engine.Handle(http.MethodGet, "/", func(c *gin.Context) {
@@ -36,34 +30,28 @@ func NewRouter() *Router {
 		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
 	})
 
-	baseURL := fmt.Sprintf("api/%s", Version)
-	authorizedRouter := engine.Group(baseURL)
-	authorizedRouter.Use(middleware.VerifyToken())
+	engine.NoRoute(func(c *gin.Context) { c.JSON(http.StatusNotFound, "Invalid api request") })
 	userHandler := api.NewUserHandler()
 	postHandler := api.NewPostHandler()
+	v1 := engine.Group("api/v1")
 	{
-		authorizedRouter.GET("users", userHandler.GetUsers)
-		authorizedRouter.DELETE("users/:id", userHandler.DeleteUser)
-		authorizedRouter.PUT("users/:id", userHandler.EditUser)
-		authorizedRouter.GET("users/:id", userHandler.GetUser)
-		authorizedRouter.POST("changePassword", userHandler.ChangeUserPassword)
+		v1.POST("login", userHandler.Login)
+		v1.POST("register", userHandler.CreateUser)
+		v1.GET("posts", postHandler.GetAllPosts)
+		auth := v1.Use(middleware.VerifyToken())
+		{
+			auth.GET("users", userHandler.GetUsers)
+			auth.DELETE("users/:id", userHandler.DeleteUser)
+			auth.PUT("users/:id", userHandler.EditUser)
+			auth.GET("users/:id", userHandler.GetUser)
+			auth.POST("changePassword", userHandler.ChangeUserPassword)
 
-		authorizedRouter.POST("posts", postHandler.CreatePost)
-		authorizedRouter.DELETE("posts/:id", postHandler.DeletePost)
-		//Get some user's all posts
-		authorizedRouter.GET("users/:id/posts", postHandler.GetAllPosts)
-	}
+			auth.POST("posts", postHandler.CreatePost)
+			auth.DELETE("posts/:id", postHandler.DeletePost)
+			//Get some user's all posts
+			auth.GET("users/:id/posts", postHandler.GetAllPosts)
+		}
 
-	normalRouter := engine.Group(baseURL)
-	{
-		normalRouter.POST("login", userHandler.Login)
-		normalRouter.POST("register", userHandler.CreateUser)
-		normalRouter.GET("posts", postHandler.GetAllPosts)
 	}
-	router := Router{
-		Engine: engine,
-		AuthorizedRouter: authorizedRouter,
-		NormalRouter: normalRouter,
-	}
-	return &router
+	return engine
 }

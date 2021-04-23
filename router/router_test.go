@@ -4,6 +4,7 @@ import (
 	bytes "bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/go-playground/assert/v2"
 	"gorm.io/gorm"
 	"net/http"
@@ -20,7 +21,7 @@ type ResponseData struct {
 	Result int `json:"result"`
 	Message string `json:"message"`
 }
-var router *Router
+var router *gin.Engine
 func TestMain(m *testing.M) {
 	setup()
 	code := m.Run()
@@ -45,9 +46,9 @@ func TestRegisterUser(t *testing.T) {
 		t.Fatal("error:", err)
 	}
 	req, _ := http.NewRequest(http.MethodPost,
-		router.NormalRouter.BasePath() + "/register",
+		"api/v1/register",
 		bytes.NewBuffer(byteArr))
-	router.Engine.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
 	type ResponseData struct {
 		Result int `json:"result"`
 		Message string `json:"message"`
@@ -82,9 +83,9 @@ func TestGetUsers(t *testing.T) {
 	token := login(email, password, t)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, router.AuthorizedRouter.BasePath() + "/users?pageNum=1&pageSize=20",nil)
+	req, _ := http.NewRequest(http.MethodGet, "api/v1/users?pageNum=1&pageSize=20",nil)
 	req.Header.Add("Authorization", "Bearer " + token)
-	router.Engine.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 	type ResponseDataWithUsers struct {
 		ResponseData
@@ -107,10 +108,10 @@ func TestDeleteUser(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodDelete,
-		fmt.Sprintf("%s/users/%d",router.AuthorizedRouter.BasePath() , user.ID),
+		fmt.Sprintf("api/v1/users/%d", user.ID),
 		nil)
 	req.Header.Add("Authorization", "Bearer " + token)
-	router.Engine.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 	var data = ResponseData{}
 	json.Unmarshal(w.Body.Bytes(), &data)
@@ -134,10 +135,10 @@ func TestEditUser(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodPut,
-		fmt.Sprintf("%s/users/%d",router.AuthorizedRouter.BasePath() , user.ID),
+		fmt.Sprintf("api/v1/users/%d", user.ID),
 		bytes.NewBuffer(bodyBytes))
 	req.Header.Add("Authorization", "Bearer " + token)
-	router.Engine.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 	var data = ResponseData{}
 	json.Unmarshal(w.Body.Bytes(), &data)
@@ -159,10 +160,10 @@ func TestGetUser(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet,
-		fmt.Sprintf("%s/users/%d",router.AuthorizedRouter.BasePath() , user.ID),
+		fmt.Sprintf("api/v1/users/%d",user.ID),
 		nil)
 	req.Header.Add("Authorization", "Bearer " + token)
-	router.Engine.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 	type ResponseDataWithUser struct {
 		ResponseData
@@ -184,9 +185,9 @@ func TestChangePassword(t *testing.T) {
 	w := httptest.NewRecorder()
 	newPwd := api.Password{Password: "12345678"}
 	pwdBytes, _ := json.Marshal(newPwd)
-	req, _ := http.NewRequest(http.MethodPost, router.AuthorizedRouter.BasePath() + "/changePassword", bytes.NewBuffer(pwdBytes))
+	req, _ := http.NewRequest(http.MethodPost, "api/v1/changePassword", bytes.NewBuffer(pwdBytes))
 	req.Header.Add("Authorization", "Bearer " + token)
-	router.Engine.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 	type ResponseDataWithUser struct {
 		ResponseData
@@ -211,9 +212,9 @@ func TestCreatePost(t *testing.T) {
 	}
 	postBytes, _ := json.Marshal(post)
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodPost, router.AuthorizedRouter.BasePath() + "/posts", bytes.NewBuffer(postBytes))
+	req, _ := http.NewRequest(http.MethodPost, "api/v1/posts", bytes.NewBuffer(postBytes))
 	req.Header.Add("Authorization", "Bearer " + token)
-	router.Engine.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
 	var data = ResponseData{}
@@ -235,9 +236,9 @@ func TestDeletePost(t *testing.T) {
 
 	token := login(email, password, t)
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodDelete, router.AuthorizedRouter.BasePath() + "/posts/" + strconv.Itoa(int(post.ID)), nil)
+	req, _ := http.NewRequest(http.MethodDelete, "api/v1/posts/" + strconv.Itoa(int(post.ID)), nil)
 	req.Header.Add("Authorization", "Bearer " + token)
-	router.Engine.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
 	var data = ResponseData{}
@@ -262,10 +263,10 @@ func TestGetAllPosts(t *testing.T) {
 	token := login(email, password, t)
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet,
-		router.AuthorizedRouter.BasePath() + "/users/" + strconv.Itoa(int(user.ID)) + "/posts?pageNum=2&pageSize=20",
+		"api/v1/users/" + strconv.Itoa(int(user.ID)) + "/posts?pageNum=2&pageSize=20",
 		nil)
 	req.Header.Add("Authorization", "Bearer " + token)
-	router.Engine.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
 	var data = ResponseData{}
@@ -281,10 +282,8 @@ func login(email string, password string, t *testing.T) (token string) {
 	byteArr, err := json.Marshal(loginInfo)
 	assert.Equal(t, nil, err)
 
-	req, _ := http.NewRequest(http.MethodPost,
-		router.NormalRouter.BasePath() + "/login",
-		bytes.NewBuffer(byteArr))
-	router.Engine.ServeHTTP(w, req)
+	req, _ := http.NewRequest(http.MethodPost, "api/v1/login", bytes.NewBuffer(byteArr))
+	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
 	type ResponseDataWithToken struct {

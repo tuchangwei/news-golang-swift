@@ -11,7 +11,7 @@ func main() {
 	settings.InitSettings()
 	db.InitDB()
 	router := router.NewRouter()
-	err := router.Engine.Run(":"+ settings.HttpPort)
+	err := router.Run(":"+ settings.HttpPort)
 	if err != nil {
 		log.Fatal("can't start server", err)
 	}
