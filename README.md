@@ -2,11 +2,11 @@
 It is a side project that is used to practise my golang api skill, I am planning to develop 
 a SwiftUI client project to interact with it.
 
-#API
+# API
 
 ## Auth
 
-###register
+### register
 
 ```shell
 curl --location --request POST 'localhost:7777/api/v1/register' \
@@ -16,7 +16,7 @@ curl --location --request POST 'localhost:7777/api/v1/register' \
 }'
 {"message":"OK","result":1,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNoYW5nd2VpdHVAZ21haWwuY29tIiwiZXhwIjoxNjE5MTg0NjQyLCJpc3MiOiJnby1uZXdzIn0.Q_3qBVN2nTYpZ50YPrs32ciNQDnjusyPbt5REOOqzD8"}
 ```
-###login
+### login
 
 ```shell
 curl --location --request POST 'localhost:7777/api/v1/login' \
@@ -27,7 +27,7 @@ curl --location --request POST 'localhost:7777/api/v1/login' \
 {"message":"OK","result":1,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNoYW5nd2VpdHVAZ21haWwuY29tIiwiZXhwIjoxNjE5MTg0OTI1LCJpc3MiOiJnby1uZXdzIn0.BovWURxcA0lhzV6dYlSxamUiJDgVx58YNJtIwp4iNCk"}%  
 ```
 
-###change password
+### change password
 
 ```shell
 curl --location --request POST 'localhost:7777/api/v1/changePassword' \
@@ -38,16 +38,16 @@ curl --location --request POST 'localhost:7777/api/v1/changePassword' \
 {"message":"OK","result":1}
 ```
 
-##User
+## User
 
-###get user
+### get user
 ```shell
 curl --location --request GET 'localhost:7777/api/v1/users/1' \
 -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNoYW5nd2VpdHVAZ21haWwuY29tIiwiZXhwIjoxNjE5MTg1MTU3LCJpc3MiOiJnby1uZXdzIn0.6Tmy1O0pLj5UTyiljx7IWco20jS1laiT4EmAD6pJtKY"  
 {"data":{"username":"","avatar":"","role":1,"id":1},"message":"OK","result":1}
 ```
 
-###get users
+### get users
 
 ```shell
 curl --location --request GET 'localhost:7777/api/v1/users?pageSize=3&pageNum=0' \
@@ -55,7 +55,7 @@ curl --location --request GET 'localhost:7777/api/v1/users?pageSize=3&pageNum=0'
 {"data":[{"username":"tu_tu","avatar":"url","role":2,"id":1}],"message":"OK","result":1,"total":1}
 ```
 
-###edit user
+### edit user
 
 ```shell
 curl --location --request PUT 'localhost:7777/api/v1/users/1' \
@@ -67,9 +67,9 @@ curl --location --request PUT 'localhost:7777/api/v1/users/1' \
 -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNoYW5nd2VpdHVAZ21haWwuY29tIiwiZXhwIjoxNjE5MTg1MTU3LCJpc3MiOiJnby1uZXdzIn0.6Tmy1O0pLj5UTyiljx7IWco20jS1laiT4EmAD6pJtKY"
 {"message":"OK","result":1} 
 ```
-##Post
+## Post
 
-###create post (post_type: 1 text, 2 image, 3 url)
+### create post (post_type: 1 text, 2 image, 3 url)
 
 ```shell
 curl --location --request POST 'localhost:7777/api/v1/posts' \
