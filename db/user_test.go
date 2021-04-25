@@ -5,6 +5,7 @@ import (
 	"github.com/go-playground/assert/v2"
 	"golang.org/x/crypto/bcrypt"
 	"server/utils/result"
+	"strconv"
 	"testing"
 )
 
@@ -146,5 +147,47 @@ func TestUser_Unfollow(t *testing.T) {
 	assert.Equal(t, code, result.Success)
 	relationship = user1.CheckRelationshipExist(user2)
 	assert.Equal(t, relationship, false)
+}
+func TestUser_GetFollowers(t *testing.T) {
+	email := "1@1.com"
+	pwd := "123456"
+	user1 := User{Email: email, Password: pwd}
+	user1.Insert()
+	for j := 0; j < 21; j++ {
+		email = strconv.Itoa(j) + "@2.com"
+		pwd = "123456"
+		user := User{Email: email, Password: pwd}
+		user.Insert()
+		code, _ := user.Follow(user1)
+		assert.Equal(t, code, result.Success)
+		relationship := user.CheckRelationshipExist(user1)
+		assert.Equal(t, relationship, true)
+	}
+	_, _, users, total := user1.GetFollowers(20, 0)
+	assert.Equal(t, total, int64(21))
+	assert.Equal(t, len(users), 20)
+	_, _, users, _ = user1.GetFollowers(20, 1)
+	assert.Equal(t, len(users), 1)
+}
+func TestUser_GetFollowings(t *testing.T) {
+	email := "1@1.com"
+	pwd := "123456"
+	user1 := User{Email: email, Password: pwd}
+	user1.Insert()
+	for j := 0; j < 21; j++ {
+		email = strconv.Itoa(j) + "@2.com"
+		pwd = "123456"
+		user := User{Email: email, Password: pwd}
+		user.Insert()
+		code, _ := user1.Follow(user)
+		assert.Equal(t, code, result.Success)
+		relationship := user1.CheckRelationshipExist(user)
+		assert.Equal(t, relationship, true)
+	}
+	_, _, users, total := user1.GetFollowings(20, 0)
+	assert.Equal(t, total, int64(21))
+	assert.Equal(t, len(users), 20)
+	_, _, users, _ = user1.GetFollowings(20, 1)
+	assert.Equal(t, len(users), 1)
 
 }

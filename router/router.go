@@ -48,6 +48,8 @@ func NewRouter() *gin.Engine {
 			auth.POST("follow", userHandler.Follow)
 			auth.POST("unfollow", userHandler.Unfollow)
 
+			auth.GET("followers", userHandler.GetFollowers)
+			auth.GET("followings", userHandler.GetFollowings)
 
 			auth.POST("posts", postHandler.CreatePost)
 			auth.DELETE("posts/:id", postHandler.DeletePost)

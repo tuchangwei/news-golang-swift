@@ -286,3 +286,39 @@ func (uh *UserHandler) Unfollow(c *gin.Context)  {
 	}
 	c.JSON(http.StatusOK, result.CodeMessage(result.Success, nil))
 }
+func (uh *UserHandler) GetFollowers(c *gin.Context)  {
+	pageNum, _ := strconv.Atoi(c.Query("pageNum"))
+	pageSize, _ := strconv.Atoi(c.Query("pageSize"))
+	if pageSize == 0 {
+		pageSize = 20
+	}
+	user := middleware.GetCurrentUserInContext(c)
+	code, msg, users, total := user.GetFollowers(pageSize, pageNum)
+	if code == result.Error {
+		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
+		c.Abort()
+		return
+	}
+	var codeMsg = result.CodeMessage(code, nil)
+	codeMsg["data"] = users
+	codeMsg["total"] = total
+	c.JSON(http.StatusOK, codeMsg)
+}
+func (uh *UserHandler) GetFollowings(c *gin.Context)  {
+	pageNum, _ := strconv.Atoi(c.Query("pageNum"))
+	pageSize, _ := strconv.Atoi(c.Query("pageSize"))
+	if pageSize == 0 {
+		pageSize = 20
+	}
+	user := middleware.GetCurrentUserInContext(c)
+	code, msg, users, total := user.GetFollowings(pageSize, pageNum)
+	if code == result.Error {
+		c.JSON(http.StatusOK, result.CodeMessage(code, msg))
+		c.Abort()
+		return
+	}
+	var codeMsg = result.CodeMessage(code, nil)
+	codeMsg["data"] = users
+	codeMsg["total"] = total
+	c.JSON(http.StatusOK, codeMsg)
+}

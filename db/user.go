@@ -171,6 +171,33 @@ func (u *User) Unfollow(anotherUser User) (code int, message *string)  {
 	return result.Success, nil
 }
 
+func (u *User) GetFollowers(pageSize int, pageNumber int) (int, *string, []APIUser, int64) {
+	var users []APIUser
+	var err error
+	var total int64
+	query := DB.Debug().Model(&User{}).Where("ID IN (?)",DB.Model(&Friend{}).Select("follower_id").Where("following_id=?", u.ID))
+	query.Count(&total)
+	if err = query.Limit(pageSize).Offset(pageNumber*pageSize).Find(&users).Error;
+		err != nil {
+		msg := err.Error()
+		return result.Error, &msg, users, 0
+	}
+	return result.Success, nil, users, total
+}
+func (u *User) GetFollowings(pageSize int, pageNumber int) (int, *string, []APIUser, int64) {
+	var users []APIUser
+	var err error
+	var total int64
+	query := DB.Debug().Model(&User{}).Where("ID IN (?)",DB.Model(&Friend{}).Select("following_id").Where("follower_id=?", u.ID))
+	query.Count(&total)
+	if err = query.Limit(pageSize).Offset(pageNumber*pageSize).Find(&users).Error;
+		err != nil {
+		msg := err.Error()
+		return result.Error, &msg, users, 0
+	}
+	return result.Success, nil, users, total
+}
+
 
 
 
