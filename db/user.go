@@ -139,8 +139,37 @@ func (u *User) LoginWithEmailAndPassword() (code int, message *string) {
 func (u *User) DeleteAll() {
 	DB.Exec("DELETE FROM users")
 }
+func (u *User) Follow(anotherUser User) (code int, message *string)  {
+	friend := Friend{
+		FollowerID:  u.ID,
+		FollowingID: anotherUser.ID,
+		CreatedAt:   time.Now(),
+	}
+	if err := DB.Create(friend).Error; err != nil {
+		msg := err.Error()
+		return result.Error, &msg
+	}
+	return result.Success, nil
+}
+func (u *User) CheckRelationshipExist(anotherUser User) bool {
+	err := DB.Model(&Friend{}).Where("follower_id=? AND following_id=?", u.ID, anotherUser.ID).First(&Friend{}).Error
+	if err != nil {
+		return false
+	}
+	return true
+}
 
-
+func (u *User) Unfollow(anotherUser User) (code int, message *string)  {
+	friend := Friend{
+		FollowerID:  u.ID,
+		FollowingID: anotherUser.ID,
+	}
+	if err := DB.Delete(friend).Error; err != nil {
+		msg := err.Error()
+		return result.Error, &msg
+	}
+	return result.Success, nil
+}
 
 
 

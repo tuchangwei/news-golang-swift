@@ -98,6 +98,61 @@ func TestGetUsers(t *testing.T) {
 	assert.Equal(t, 21, data.Total)
 	t.Log(w.Body.String())
 }
+func TestFollowUser(t *testing.T) {
+	email := "1@1.com"
+	pwd := "123456"
+	user1 := db.User{Email: email, Password: pwd}
+	user1.Insert()
+
+
+	user2 := db.User{Email: "2@2.com", Password: "123456"}
+	user2.Insert()
+
+	token := login(user1.Email, pwd, t)
+	user2Bytes, _ := json.Marshal(user2)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodPost,
+		"/api/v1/follow",
+		bytes.NewBuffer(user2Bytes))
+	req.Header.Add("Authorization", "Bearer " + token)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+	var data = ResponseData{}
+	json.Unmarshal(w.Body.Bytes(), &data)
+	assert.Equal(t, result.GetMessage(result.Success), data.Message)
+	t.Log(w.Body.String())
+
+	exist := user1.CheckRelationshipExist(user2)
+	assert.Equal(t, exist, true)
+}
+func TestUnfollowUser(t *testing.T) {
+	email := "1@1.com"
+	pwd := "123456"
+	user1 := db.User{Email: email, Password: pwd}
+	user1.Insert()
+
+
+	user2 := db.User{Email: "2@2.com", Password: "123456"}
+	user2.Insert()
+	user1.Follow(user2)
+
+	token := login(user1.Email, pwd, t)
+	user2Bytes, _ := json.Marshal(user2)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodPost,
+		"/api/v1/unfollow",
+		bytes.NewBuffer(user2Bytes))
+	req.Header.Add("Authorization", "Bearer " + token)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+	var data = ResponseData{}
+	json.Unmarshal(w.Body.Bytes(), &data)
+	assert.Equal(t, result.GetMessage(result.Success), data.Message)
+	t.Log(w.Body.String())
+
+	exist := user1.CheckRelationshipExist(user2)
+	assert.Equal(t, exist, false)
+}
 func TestDeleteUser(t *testing.T) {
 	email := "1@1.com"
 	password := "123456"
@@ -275,6 +330,7 @@ func TestGetAllPosts(t *testing.T) {
 	t.Log(w.Body.String())
 }
 
+
 func login(email string, password string, t *testing.T) (token string) {
 	t.Helper()
 	w := httptest.NewRecorder()
@@ -282,7 +338,7 @@ func login(email string, password string, t *testing.T) (token string) {
 	byteArr, err := json.Marshal(loginInfo)
 	assert.Equal(t, nil, err)
 
-	req, _ := http.NewRequest(http.MethodPost, "api/v1/login", bytes.NewBuffer(byteArr))
+	req, _ := http.NewRequest(http.MethodPost, "/api/v1/login", bytes.NewBuffer(byteArr))
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 

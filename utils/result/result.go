@@ -18,6 +18,7 @@ const (
 	UserHasNoPermission = 1006
 	NoEmailInContext = 1007
 
+
 	//code = 2000...token error
 	TokenMalformed = 2000 // Token is malformed
 	TokenInvalided = 2001             // Token could not be verified because of signing problems
@@ -27,6 +28,12 @@ const (
 
 	//code = 3000... post error
 	PostNotExist = 3002
+
+	//code = 4000... follower/following error
+	UserCantFollowHimself = 4000
+	UserCantUnfollowHimself = 4001
+
+
 )
 var resultCodeMsg = map[int]string{
 	Success: "OK",
@@ -44,6 +51,8 @@ var resultCodeMsg = map[int]string{
 	UserHasNoPermission: "User has no permission",
 	NoEmailInContext: "No email in Context",
 	PostNotExist : "Post is not exist",
+	UserCantFollowHimself : "You can't follow yourself",
+	UserCantUnfollowHimself : "You can't unfollow yourself",
 }
 
 func CodeMessage(resultCode int, message *string) gin.H {

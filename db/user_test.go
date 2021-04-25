@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"github.com/go-playground/assert/v2"
 	"golang.org/x/crypto/bcrypt"
 	"server/utils/result"
 	"testing"
@@ -92,4 +93,58 @@ func TestUser_LoginWithEmailAndPassword(t *testing.T) {
 	if code != result.Success {
 		t.Fatalf("%+v", result.CodeMessage(code, nil))
 	}
+}
+func TestUser_Follow(t *testing.T) {
+	email := "1@1.com"
+	pwd := "123456"
+	user1 := User{Email: email, Password: pwd}
+	user1.Insert()
+
+	email = "2@2.com"
+	pwd = "123456"
+	user2 := User{Email: email, Password: pwd}
+	user2.Insert()
+	code, _ := user1.Follow(user2)
+	assert.Equal(t, code, result.Success)
+}
+func TestUser_CheckRelationshipExist(t *testing.T) {
+	email := "1@1.com"
+	pwd := "123456"
+	user1 := User{Email: email, Password: pwd}
+	user1.Insert()
+
+
+	email = "2@2.com"
+	pwd = "123456"
+	user2 := User{Email: email, Password: pwd}
+	exist := user1.CheckRelationshipExist(user2)
+	assert.Equal(t, exist, false)
+
+	user2.Insert()
+	code, _ := user1.Follow(user2)
+	assert.Equal(t, code, result.Success)
+
+	exist = user1.CheckRelationshipExist(user2)
+	assert.Equal(t, exist, true)
+}
+func TestUser_Unfollow(t *testing.T) {
+	email := "1@1.com"
+	pwd := "123456"
+	user1 := User{Email: email, Password: pwd}
+	user1.Insert()
+
+	email = "2@2.com"
+	pwd = "123456"
+	user2 := User{Email: email, Password: pwd}
+	user2.Insert()
+	code, _ := user1.Follow(user2)
+	assert.Equal(t, code, result.Success)
+	relationship := user1.CheckRelationshipExist(user2)
+	assert.Equal(t, relationship, true)
+
+	code, _ = user1.Unfollow(user2)
+	assert.Equal(t, code, result.Success)
+	relationship = user1.CheckRelationshipExist(user2)
+	assert.Equal(t, relationship, false)
+
 }

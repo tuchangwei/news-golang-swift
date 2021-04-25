@@ -228,3 +228,61 @@ func (uh *UserHandler)Login(c *gin.Context) {
 	responseData["token"] = token
 	c.JSON(http.StatusOK, responseData)
 }
+func (uh *UserHandler) Follow(c *gin.Context)  {
+	user := db.User{}
+	if err := utils.HandleBindJSON(&user, c); err != nil {
+		msg := err.Error()
+		c.JSON(http.StatusOK, result.CodeMessage(result.Error, &msg))
+		c.Abort()
+		return
+	}
+	code := user.CheckExistViaID()
+	if code == result.UserNotExist {
+		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
+		c.Abort()
+		return
+	}
+	currentUser := middleware.GetCurrentUserInContext(c)
+	if currentUser.ID == user.ID {
+		c.JSON(http.StatusOK, result.CodeMessage(result.UserCantFollowHimself, nil))
+		c.Abort()
+		return
+	}
+	if !currentUser.CheckRelationshipExist(user) {
+		code, msg := currentUser.Follow(user)
+		if code != result.Success {
+			c.JSON(http.StatusOK, result.CodeMessage(result.Error, msg))
+			c.Abort()
+			return
+		}
+	}
+	c.JSON(http.StatusOK, result.CodeMessage(result.Success, nil))
+}
+func (uh *UserHandler) Unfollow(c *gin.Context)  {
+	user := db.User{}
+	if err := utils.HandleBindJSON(&user, c); err != nil {
+		msg := err.Error()
+		c.JSON(http.StatusOK, result.CodeMessage(result.Error, &msg))
+		c.Abort()
+		return
+	}
+	code := user.CheckExistViaID()
+	if code == result.UserNotExist {
+		c.JSON(http.StatusOK, result.CodeMessage(code, nil))
+		c.Abort()
+		return
+	}
+	currentUser := middleware.GetCurrentUserInContext(c)
+	if currentUser.ID == user.ID {
+		c.JSON(http.StatusOK, result.CodeMessage(result.UserCantUnfollowHimself, nil))
+		c.Abort()
+		return
+	}
+	code, msg := currentUser.Unfollow(user)
+	if code != result.Success {
+		c.JSON(http.StatusOK, result.CodeMessage(result.Error, msg))
+		c.Abort()
+		return
+	}
+	c.JSON(http.StatusOK, result.CodeMessage(result.Success, nil))
+}
