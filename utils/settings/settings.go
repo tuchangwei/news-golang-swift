@@ -19,6 +19,8 @@ var (
 	DBPassword string
 	DBName string
 	JWTKey string
+	AWSAccessKeyID string
+	AWSSecretAccessKey string
 )
 
 func InitSettings() {
@@ -32,10 +34,10 @@ func InitSettings() {
 	switch env {
 	case "dev":
 		fmt.Println("You are under Development environment")
-		file, err =  ini.Load("/Users/tcw/Documents/Workspace/Mine/news-golang-swift-server/config/config.ini")
+		file, err =  ini.Load("/Users/tcw/Documents/Workspace/Mine/news-golang-swift-config/dev/config.ini")
 	case "pro":
 		fmt.Println("You are under Production environment")
-		file, err =  ini.Load("../../news-golang-swift-production-config/config.ini")
+		file, err =  ini.Load("/Users/tcw/Documents/Workspace/Mine/news-golang-swift-config/pro/config.ini")
 	default:
 		log.Fatal("\"env\"'s value is not defined")
 	}
@@ -50,6 +52,9 @@ func loadServerSettings(file *ini.File)  {
 	AppMode = file.Section("server").Key("app_mode").MustString("debug")
 	HttpPort = file.Section("server").Key("http_port").MustString("7777")
 	JWTKey = file.Section("server").Key("jwt_key").MustString("go-news~~~~xxxx~~~~")
+	AWSAccessKeyID = file.Section("asw").Key("aws_access_key_id").String()
+	AWSSecretAccessKey = file.Section("asw").Key("aws_secret_access_key").String()
+
 }
 func loadDatabaseSettings(file *ini.File)  {
 	DB = file.Section("database").Key("db").MustString("mysql")
