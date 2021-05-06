@@ -166,3 +166,7 @@ curl --location --request POST 'localhost:7777/api/v1/upload' \
 -F "file=@WX20210428-164204.png"
 
 ```
+response:
+```shell
+{"message":"OK","result":1,"url":"https://go-swift-news.s3.amazonaws.com/images/1620310152.png"}
+```
