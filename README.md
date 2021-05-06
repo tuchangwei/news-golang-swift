@@ -157,3 +157,12 @@ response:
 ```shell
 {"message":"OK","result":1}
 ```
+### upload image
+request:
+```shell
+curl --location --request POST 'localhost:7777/api/v1/upload' \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6IjFAMS5jb20iLCJleHAiOjE2MjAzMTA1OTIsImlzcyI6ImdvLW5ld3MifQ.QNIyS3r5MNNyx_hQPb2ZpqZfzw0CO5wkQSLB64cPC4E" \
+-H "Content-Type: multipart/form-data" \
+-F "file=@WX20210428-164204.png"
+
+```
