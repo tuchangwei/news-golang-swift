@@ -55,6 +55,9 @@ func NewRouter() *gin.Engine {
 			auth.DELETE("posts/:id", postHandler.DeletePost)
 			//Get some user's all posts
 			auth.GET("users/:id/posts", postHandler.GetAllPosts)
+
+			uploadHandler := api.NewUploadHandler()
+			auth.POST("upload", uploadHandler.UploadPhoto)
 		}
 
 	}

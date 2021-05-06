@@ -7,6 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/assert/v2"
 	"gorm.io/gorm"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -416,4 +418,28 @@ func login(email string, password string, t *testing.T) (token string) {
 	assert.Equal(t, result.GetMessage(result.Success), data.Message)
 	t.Log(w.Body.String())
 	return data.Token
+}
+func TestUpload(t *testing.T) {
+	email := "1@1.com"
+	password := "123456"
+	user := &db.User{Email: email, Password: password}
+	user.Insert()
+
+	token := login(email, password, t)
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	ioWriter, _ := writer.CreateFormFile("file", "image.png")
+	file, _ := os.Open("image.png")
+	io.Copy(ioWriter, file)
+	req, _ := http.NewRequest(http.MethodPost,
+		"/api/v1/upload",
+		body)
+	req.FormFile("image.png")
+	req.Header.Add("Authorization", "Bearer " + token)
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+	writer.Close()
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+	t.Log(w.Body.String())
 }

@@ -33,6 +33,9 @@ const (
 	UserCantFollowHimself = 4000
 	UserCantUnfollowHimself = 4001
 
+	//code = 5000... upload error
+	UploadError = 5000
+
 
 )
 var resultCodeMsg = map[int]string{
@@ -53,6 +56,7 @@ var resultCodeMsg = map[int]string{
 	PostNotExist : "Post is not exist",
 	UserCantFollowHimself : "You can't follow yourself",
 	UserCantUnfollowHimself : "You can't unfollow yourself",
+	UploadError : "upload file error",
 }
 
 func CodeMessage(resultCode int, message *string) gin.H {
