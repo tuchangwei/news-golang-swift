@@ -2,33 +2,7 @@
 It is a side project that is used to practise my golang api skill, I am planning to develop 
 a SwiftUI client project to interact with it.
 
-If you want to run the app, please create a `config.ini` file and replace the path in settings.go. `config.ini` is like below:
-```shell
-
-[server]
-# Protocol (http or https)
-protocol = http
-
-# Mode (debug or release)
-app_mode = debug
-
-# The http port to use
-http_port = 7777
-
-gwt_key = "go-news~~~~xxxx~~~~"
-[database]
-
-database = mysql
-database_host = 127.0.0.1
-database_port = 3306
-database_user = root
-database_password = 123456
-database_name = go_news
-
-[aws]
-aws_access_key_id = your_access_key_id
-aws_secret_access_key = your_secret_access_key
-```
+Note: If you want to run the app, besides cofig the settings under `config/config.ini`, you need to put your aws credential file under `~/.aws/credentials` , please check [this](https://asanchez.dev/blog/upload-to-amazon-s3-with-golang/) for more information.
 
 # API
 
